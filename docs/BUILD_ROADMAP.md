@@ -1,0 +1,93 @@
+# Building STARFALL: ECLIPSE PROTOCOL for $0
+### A step-by-step roadmap using only free tools
+
+The strategy: build a **web-first vertical slice** solo/small-team, prove the loop is fun, then scale. Every tool below has a genuinely free tier or is open source — no trials, no credit card.
+
+---
+
+## Phase 0 — Design on Paper (Weeks 1–2, $0)
+
+1. **Write the one-page design doc** (done — see `GAME_CONCEPT.md`).
+2. **Prototype the gacha math in a spreadsheet** (Google Sheets, free): simulate 10,000 pull sessions, verify pity curve feels right, model F2P income per patch.
+3. **Prototype combat on paper or in a spreadsheet:** 4 units vs. 2 enemies, run the timeline/Charge economy by hand for 10 turns. If it's not interesting in a spreadsheet, no engine will save it.
+4. **Scope ruthlessly for the vertical slice:** 4 playable units, 1 star system, 5 combat encounters, 1 boss, working gacha with placeholder pool. Nothing else.
+
+## Phase 1 — Tools Setup (Week 3, $0)
+
+| Need | Free tool | Why |
+|---|---|---|
+| Engine | **Godot 4** | Fully free/open-source, no revenue cut ever, exports to web/mobile/PC, great 2D |
+| Alternative (web-native) | **Phaser 3 + TypeScript** | If you want pure browser + npm ecosystem |
+| Code hosting / CI | **GitHub free** (this repo) + GitHub Actions | Free CI minutes for builds |
+| Art | **Krita** (painting), **Aseprite alternative: LibreSprite**, **Inkscape** (UI vectors) | Open source |
+| Character rigging | **Blender** grease pencil, or free tier of **Live2D Cubism** (indie free version) | 2D motion like Nikke/Arknights |
+| Audio | **LMMS** (music), **Audacity** (SFX editing), **freesound.org / OpenGameArt** (CC0 assets) | Open source + free assets |
+| UI mockups | **Figma free tier** or **Penpot** (open source) | Design the ZZZ-style menus before coding them |
+| Project tracking | **GitHub Projects** | Free, lives with the code |
+
+**Recommended stack: Godot 4 + GDScript**, exporting to HTML5 first. Mobile export comes free later from the same project.
+
+## Phase 2 — Core Combat Prototype (Weeks 4–8, $0)
+
+Build in this order — each step is playable:
+
+1. **Timeline system:** units + enemies on a speed-based turn queue. Gray boxes, debug text. No art.
+2. **Basic attack / Skill / Charge pool:** the shared-resource economy from the design doc.
+3. **Resonance shields + Breach:** enemy shield bar, matching-element damage, stagger window.
+4. **Ultimates** with off-turn interrupt casting.
+5. **4 archetype units** (DPS/tank/support/healer) as data files (JSON or Godot Resources) — *data-driven from day one* so adding unit #5 costs a config file, not code.
+6. **One boss** with a phase change.
+
+**Milestone gate:** hand the prototype to 3 people. If nobody says "one more fight," iterate here before building anything else.
+
+## Phase 3 — Gacha, Meta & Progression (Weeks 9–12, $0)
+
+1. **Pull system:** implement the exact pity math from the spreadsheet (soft pity @74, hard @90, 50/50). Client-side for now; keep the pull logic in one pure function so it can move server-side later untouched.
+2. **Roster & leveling:** level/ascend with two farmable materials max in the slice.
+3. **Pull animation:** one skippable, satisfying sequence (screen crack + rarity color). This single animation carries enormous perceived value — study HSR's.
+4. **Save system:** local save (Godot's `user://` + JSON). Cloud saves come later.
+5. **Daily loop stub:** 3 daily tasks granting pull currency.
+
+## Phase 4 — Content & Polish for the Vertical Slice (Weeks 13–18, $0)
+
+1. **Art pass:** 4 characters. If you can't draw: commission-free route is CC0/CC-BY packs from itch.io + OpenGameArt as placeholders, and lean the launch aesthetic on strong UI + silhouettes. (Do **not** ship AI-generated character art as your identity — the gacha audience punishes it.)
+2. **One story chapter:** dialogue system (Godot: free **Dialogic 2** addon), ~20 minutes of story.
+3. **UI pass** from the Figma mockups.
+4. **Audio pass:** 3 music tracks, core SFX.
+5. **Onboarding:** first 10 minutes = tutorial fight → story beat → free 10-pull. Copy the market leaders' opening flow shamelessly.
+
+## Phase 5 — Ship the Slice Publicly (Week 19+, $0)
+
+| Need | Free option |
+|---|---|
+| Web hosting | **itch.io** (HTML5 upload, free) and/or **GitHub Pages** from this repo |
+| Landing page | GitHub Pages |
+| Community | **Discord** (free) + a subreddit |
+| Analytics | Godot + self-hosted **Plausible**-style events to a free-tier backend, or itch.io's built-in stats |
+| Feedback | Google Forms embedded post-session |
+
+Launch as **"STARFALL — Combat Demo"**. Devlog on itch.io + TikTok/YouTube Shorts of combat clips (gacha audiences discover games through character showcase clips — this is free UA).
+
+## Phase 6 — Only After the Slice Proves Out (still ~$0)
+
+1. **Accounts & cloud saves:** **Supabase** or **Firebase** free tier (auth + Postgres/Firestore). Free tiers comfortably cover thousands of DAU.
+2. **Server-authoritative pulls:** move that pure pull function into a **Supabase Edge Function / Cloudflare Workers** (free tier: 100k requests/day). Required before any real money touches the game.
+3. **Mobile builds:** Godot exports Android free (Play Console has a one-time $25 fee — the *only* unavoidable cost in this entire plan, and only when you're ready for the store; iOS needs $99/yr, defer it).
+4. **Live-ops:** patch cadence from the concept doc, driven by remote config (Supabase table) so events don't require client updates.
+5. **Monetization:** only now, only with the ethical guardrails in the concept doc, and check local gacha-disclosure law first.
+
+---
+
+## Total budget summary
+
+| Item | Cost |
+|---|---|
+| Everything through public web launch | **$0** |
+| Google Play (optional, one-time) | $25 |
+| Apple App Store (optional, yearly) | $99 |
+
+## The three rules that keep this shippable
+
+1. **Data-driven everything** — characters, enemies, banners, and events are config files, not code.
+2. **Web first** — instant playtesting via a link beats waiting for app-store review while you iterate.
+3. **The slice is the product** — nothing from Phase 6 exists until strangers replay Phase 5 voluntarily.
