@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STARFALL: Eclipse Protocol — Combat Prototype</title>
+<style>
+  :root {
+    --bg: #0a0e1a; --panel: #121829; --panel2: #1a2138; --line: #2a3352;
+    --text: #dce4ff; --dim: #7a86ad; --accent: #5ee0ff; --gold: #ffd75e;
+    --hp: #4ade80; --hp-low: #f87171; --meter: #5ee0ff; --shield: #93c5fd;
+    --buff: #4ade80; --debuff: #f472b6; --ion: #7dd3fc; --cryo: #a5b4fc; --plasma: #fda4af; --umbral: #c084fc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(ellipse at 50% -20%, #1a2450 0%, var(--bg) 60%);
+    color: var(--text); font-family: "Segoe UI", system-ui, sans-serif;
+    min-height: 100vh; padding: 12px; display: flex; flex-direction: column; align-items: center;
+  }
+  h1 { font-size: 16px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; margin: 4px 0 10px; }
+  h1 small { color: var(--dim); letter-spacing: 1px; font-size: 10px; display: block; text-align: center; }
+  #battlefield { width: 100%; max-width: 900px; }
+  .row { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px; width: 158px; position: relative; transition: box-shadow .15s, transform .15s;
+    cursor: default;
+  }
+  .card.active { box-shadow: 0 0 14px var(--accent); border-color: var(--accent); transform: translateY(-2px); }
+  .card.targetable { cursor: pointer; border-color: var(--gold); }
+  .card.targetable:hover { box-shadow: 0 0 12px var(--gold); }
+  .card.dead { opacity: .32; filter: grayscale(1); }
+  .cname { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tagline { font-size: 9px; color: var(--dim); margin-bottom: 5px; }
+  .aff { display: inline-block; padding: 0 5px; border-radius: 6px; font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #0a0e1a; font-weight: 700; }
+  .aff.ion { background: var(--ion); } .aff.cryo { background: var(--cryo); }
+  .aff.plasma { background: var(--plasma); } .aff.umbral { background: var(--umbral); }
+  .bar { height: 7px; background: #0d1122; border-radius: 4px; overflow: hidden; margin-bottom: 3px; }
+  .bar > i { display: block; height: 100%; border-radius: 4px; transition: width .25s; }
+  .hpfill { background: var(--hp); } .hpfill.low { background: var(--hp-low); }
+  .shieldfill { background: var(--shield); }
+  .meterfill { background: var(--meter); opacity: .8; }
+  .nums { font-size: 9px; color: var(--dim); display: flex; justify-content: space-between; }
+  .fx { min-height: 14px; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 2px; }
+  .chip { font-size: 8px; padding: 0 4px; border-radius: 4px; border: 1px solid; }
+  .chip.buff { color: var(--buff); border-color: var(--buff); }
+  .chip.debuff { color: var(--debuff); border-color: var(--debuff); }
+  #hud {
+    width: 100%; max-width: 900px; background: var(--panel2); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  }
+  #skills { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
+  .skillbtn {
+    background: #101731; color: var(--text); border: 1px solid var(--accent); border-radius: 8px;
+    padding: 8px 12px; font-size: 12px; cursor: pointer; min-width: 130px; text-align: left;
+  }
+  .skillbtn:hover:not(:disabled) { background: #1b2547; }
+  .skillbtn:disabled { border-color: var(--line); color: var(--dim); cursor: not-allowed; }
+  .skillbtn small { display: block; font-size: 9px; color: var(--dim); }
+  .ctl { display: flex; gap: 6px; }
+  .ctl button {
+    background: none; border: 1px solid var(--line); color: var(--dim); border-radius: 8px;
+    padding: 8px 10px; font-size: 11px; cursor: pointer;
+  }
+  .ctl button.on { color: var(--accent); border-color: var(--accent); }
+  #hint { width: 100%; max-width: 900px; font-size: 11px; color: var(--gold); min-height: 18px; margin: 6px 0; }
+  #logbox {
+    width: 100%; max-width: 900px; height: 150px; overflow-y: auto; background: #0d1122;
+    border: 1px solid var(--line); border-radius: 10px; padding: 8px; font-size: 11px; line-height: 1.5;
+    font-family: ui-monospace, monospace;
+  }
+  #logbox .skill { color: var(--accent); } #logbox .crit { color: var(--gold); }
+  #logbox .heal { color: var(--hp); } #logbox .kill { color: var(--hp-low); font-weight: 700; }
+  #logbox .buff { color: var(--buff); } #logbox .debuff { color: var(--debuff); }
+  #logbox .resist { color: var(--dim); font-style: italic; }
+  #banner {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(5,8,18,.85); z-index: 10; flex-direction: column; gap: 14px;
+  }
+  #banner h2 { font-size: 34px; letter-spacing: 6px; color: var(--gold); text-transform: uppercase; }
+  #banner button { background: var(--accent); border: 0; color: #06101c; font-weight: 700; padding: 10px 26px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+  <h1>Starfall: Eclipse Protocol <small>combat prototype — turn meter · cooldowns · debuff warfare · affinity</small></h1>
+  <div id="battlefield">
+    <div class="row" id="foeRow"></div>
+    <div class="row" id="heroRow"></div>
+  </div>
+  <div id="hint"></div>
+  <div id="hud">
+    <div id="skills"></div>
+    <div class="ctl">
+      <button id="autoBtn">AUTO</button>
+      <button id="fastBtn">2×</button>
+      <button id="restartBtn">RESTART</button>
+    </div>
+  </div>
+  <div id="logbox"></div>
+  <div id="banner"><h2 id="bannerText"></h2><button onclick="restart()">FIGHT AGAIN</button></div>
+
+<script src="combat.js"></script>
+<script>
+const S = window.Starfall;
+let state, currentActor = null, pendingSkill = null, auto = false, fast = false, busy = false;
+
+const $ = (id) => document.getElementById(id);
+
+function fxChips(u) {
+  return u.effects.map((e) => {
+    const m = S.EFFECTS[e.type];
+    return `<span class="chip ${m.kind}">${m.label} ${e.turns}</span>`;
+  }).join('');
+}
+
+function card(u) {
+  const hpPct = (100 * u.hp / u.maxHp).toFixed(1);
+  const shPct = Math.min(100, 100 * u.shield / u.maxHp).toFixed(1);
+  const mPct = (100 * u.meter / S.METER_MAX).toFixed(1);
+  const classes = ['card'];
+  if (!u.alive) classes.push('dead');
+  if (currentActor && u.id === currentActor.id) classes.push('active');
+  if (pendingSkill !== null && u.alive && targetableSide() === u.side) classes.push('targetable');
+  return `<div class="${classes.join(' ')}" data-id="${u.id}">
+    <div class="cname">${u.name}</div>
+    <div class="tagline"><span class="aff ${u.affinity}">${u.affinity}</span> ${u.role}${u.enrage && u.enrageStacks ? ` · enrage +${Math.round(u.enrage*u.enrageStacks*100)}%` : ''}</div>
+    <div class="bar"><i class="hpfill ${u.hp/u.maxHp<0.35?'low':''}" style="width:${hpPct}%"></i></div>
+    ${u.shield>0?`<div class="bar"><i class="shieldfill" style="width:${shPct}%"></i></div>`:''}
+    <div class="bar"><i class="meterfill" style="width:${mPct}%"></i></div>
+    <div class="nums"><span>${u.hp}/${u.maxHp}</span><span>SPD ${Math.round(S.effStat(u,'spd'))}</span></div>
+    <div class="fx">${fxChips(u)}</div>
+  </div>`;
+}
+
+function targetableSide() {
+  if (!currentActor || pendingSkill === null) return null;
+  const s = currentActor.skills[pendingSkill];
+  return (s.target === 'ally' || s.target === 'allAllies' || s.target === 'self') ? 'hero' : 'foe';
+}
+
+function render() {
+  $('foeRow').innerHTML = state.units.filter((u) => u.side === 'foe').map(card).join('');
+  $('heroRow').innerHTML = state.units.filter((u) => u.side === 'hero').map(card).join('');
+  for (const el of document.querySelectorAll('.card.targetable')) {
+    el.onclick = () => pickTarget(el.dataset.id);
+  }
+  renderSkills();
+  renderLog();
+}
+
+function renderSkills() {
+  const box = $('skills');
+  if (!currentActor || currentActor.side !== 'hero' || auto || state.winner) {
+    box.innerHTML = `<span style="font-size:11px;color:var(--dim)">${state.winner ? 'battle over' : auto ? 'auto-battle engaged' : 'enemy acting...'}</span>`;
+    return;
+  }
+  box.innerHTML = currentActor.skills.map((s, i) => {
+    const cd = currentActor.cooldowns[i];
+    const parts = [];
+    if (s.mult) parts.push(`${s.mult}× dmg`);
+    if (s.healPct) parts.push(`heal ${Math.round(s.healPct*100)}%`);
+    if (s.cleanse) parts.push('cleanse');
+    if (s.tmBoostAllies) parts.push('TM boost');
+    if (s.tmDrain) parts.push('TM drain');
+    for (const e of s.effects || []) parts.push(S.EFFECTS[e.type].label);
+    return `<button class="skillbtn" data-i="${i}" ${cd>0?'disabled':''}>${s.name}${cd>0?` (${cd})`:''}<small>${parts.join(' · ')||'attack'}${s.cd?` · ${s.cd}t cd`:''}</small></button>`;
+  }).join('');
+  for (const b of box.querySelectorAll('button:not(:disabled)')) {
+    b.onclick = () => selectSkill(+b.dataset.i);
+  }
+}
+
+function renderLog() {
+  const box = $('logbox');
+  box.innerHTML = state.log.slice(-80).map((l) => `<div class="${l.cls}">${l.text}</div>`).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function selectSkill(i) {
+  const s = currentActor.skills[i];
+  if (s.target === 'allEnemies' || s.target === 'allAllies' || s.target === 'self') {
+    act(i, null);
+  } else {
+    pendingSkill = i;
+    $('hint').textContent = `${s.name}: choose a ${s.target === 'ally' ? 'ally' : 'target'} ▸`;
+    render();
+  }
+}
+
+function pickTarget(id) {
+  const t = state.units.find((u) => u.id === id);
+  const i = pendingSkill;
+  pendingSkill = null;
+  $('hint').textContent = '';
+  act(i, t);
+}
+
+function act(skillIdx, target) {
+  S.executeTurn(state, currentActor, skillIdx, target);
+  state.winner = S.battleOver(state);
+  currentActor = null;
+  render();
+  setTimeout(loop, fast ? 220 : 550);
+}
+
+function loop() {
+  if (busy) return;
+  if (state.winner) return endBattle();
+  busy = true;
+  currentActor = S.nextActor(state);
+  busy = false;
+  render();
+  if (currentActor.side === 'foe' || auto) {
+    const { skillIdx, target } = S.chooseAction(state, currentActor);
+    setTimeout(() => act(skillIdx, target), fast ? 200 : 500);
+  }
+  // else: wait for player input via skill buttons
+}
+
+function endBattle() {
+  render();
+  $('bannerText').textContent = state.winner === 'hero' ? 'Victory' : 'Squad Lost';
+  $('bannerText').style.color = state.winner === 'hero' ? 'var(--gold)' : 'var(--hp-low)';
+  $('banner').style.display = 'flex';
+}
+
+function restart() {
+  $('banner').style.display = 'none';
+  state = S.newBattle();
+  currentActor = null; pendingSkill = null;
+  render();
+  loop();
+}
+
+$('autoBtn').onclick = () => {
+  auto = !auto;
+  $('autoBtn').classList.toggle('on', auto);
+  if (auto && currentActor && currentActor.side === 'hero' && !state.winner) {
+    const { skillIdx, target } = S.chooseAction(state, currentActor);
+    act(skillIdx, target);
+  } else render();
+};
+$('fastBtn').onclick = () => { fast = !fast; $('fastBtn').classList.toggle('on', fast); };
+$('restartBtn').onclick = restart;
+
+restart();
+</script>
+</body>
+</html>

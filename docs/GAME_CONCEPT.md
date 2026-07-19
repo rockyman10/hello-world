@@ -148,7 +148,27 @@ The **Meridian** ship: assign off-squad units to modules (Reactor = currency, Bi
 
 ---
 
-## 9. Risks & Mitigations
+## 9. Player Experience Pillars — Fun Over Grind
+
+What the market data and community sentiment actually say: players love RAID's *combat* (depth, speed tuning, debuff strategy) but its most common criticisms are the grind — energy walls, repetitive farming, and gear RNG with no finish line. Meanwhile the games with the strongest long-term goodwill (HSR, Nikke) won it by making the grind background noise and putting *challenge and story* in the foreground. We take RAID's combat and reject its reward structure.
+
+**Pillar 1 — Grind is passive, challenge is active.** Farming (gear, ascension mats, credits) happens through the idle ship-base and one-tap sweeps of already-cleared stages. Active session time is always spent on something *new*: a story chapter, a boss mechanic, a Void Rift run, an event. The player never manually replays a stage they've already mastered.
+
+**Pillar 2 — No energy wall on the fun.** Story, boss attempts, Void Rifts, and events cost no stamina, ever. Stamina exists only to meter *sweep farming* — so the cap limits how fast you can idle-grind, never how long you can actually play.
+
+**Pillar 3 — Every grind has a visible finish line.** Gear sub-stat pity tokens, weekly guaranteed gear selectors, material crafting to convert excess into what's needed. RNG can make progress *faster*, never *impossible*. "I know exactly what I need and roughly when I'll have it" is the feeling.
+
+**Pillar 4 — Difficulty is the content.** Reward big one-time jackpots for first-clears of hard content (boss mechanic checks, Rift depth records, challenge tiers with modifiers) instead of tiny drips for repetition. Replayability comes from the roguelite Rifts being genuinely fun to re-roll, not from being required.
+
+**Pillar 5 — Big, celebrated rewards beat constant crumbs.** Milestone chests, first-clear jackpots, event finales with a guaranteed 4★ — fewer, larger, *celebrated* payouts (full-screen moments, like a pull animation) rather than a stream of +5 currency toasts nobody feels.
+
+**Pillar 6 — Respect the session, never punish absence.** Dailies in under 10 minutes; no login streaks that break, no FOMO decay, idle earnings cap at 24h so a weekend away costs little. Coming back should feel like a warm welcome (accumulated loot chest), not homework debt.
+
+**Pillar 7 — Characters are the real retention.** Story spotlights, bond conversations, and showcase clips make players *want* the next unit. The pull is the reward; the grind is just the road between pulls and the challenges that test them.
+
+---
+
+## 10. Risks & Mitigations
 
 | Risk | Mitigation |
 |---|---|

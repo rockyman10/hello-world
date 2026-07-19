@@ -29,6 +29,8 @@ The strategy: build a **web-first vertical slice** solo/small-team, prove the lo
 
 ## Phase 2 — Core Combat Prototype (Weeks 4–8, $0)
 
+> **Status: started.** A playable browser prototype lives in [`/prototype`](../prototype/) — open `prototype/index.html` in any browser (no install, no build step). Engine logic is DOM-free in `combat.js` (portable to Godot/server later); `node prototype/test.js` runs a 500-battle balance/invariant harness.
+
 Build in this order — each step is playable:
 
 1. **Turn Meter system:** every unit's meter fills by Speed each tick; act at 100%. Gray boxes, debug text, visible meter bars. No art. (This is the whole feel of RAID combat — get the tick rate and meter readability right first.)
