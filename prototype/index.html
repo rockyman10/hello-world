@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>STARFALL: Eclipse Protocol — Combat Prototype</title>
+<title>STARFALL: Eclipse Protocol — Prototype</title>
 <style>
   :root {
     --bg: #0a0e1a; --panel: #121829; --panel2: #1a2138; --line: #2a3352;
-    --text: #dce4ff; --dim: #7a86ad; --accent: #5ee0ff; --gold: #ffd75e;
+    --text: #dce4ff; --dim: #7a86ad; --accent: #5ee0ff; --gold: #ffd75e; --purple: #c084fc;
     --hp: #4ade80; --hp-low: #f87171; --meter: #5ee0ff; --shield: #93c5fd;
     --buff: #4ade80; --debuff: #f472b6; --ion: #7dd3fc; --cryo: #a5b4fc; --plasma: #fda4af; --umbral: #c084fc;
   }
@@ -17,14 +17,24 @@
     color: var(--text); font-family: "Segoe UI", system-ui, sans-serif;
     min-height: 100vh; padding: 12px; display: flex; flex-direction: column; align-items: center;
   }
-  h1 { font-size: 16px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; margin: 4px 0 10px; }
-  h1 small { color: var(--dim); letter-spacing: 1px; font-size: 10px; display: block; text-align: center; }
-  #battlefield { width: 100%; max-width: 900px; }
+  h1 { font-size: 16px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; margin: 4px 0 8px; text-align: center; }
+  h1 small { color: var(--dim); letter-spacing: 1px; font-size: 10px; display: block; }
+  .wrap { width: 100%; max-width: 940px; }
+  #currencies { display: flex; gap: 14px; justify-content: center; font-size: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+  #currencies span b { color: var(--gold); }
+  #tabs { display: flex; gap: 6px; justify-content: center; margin-bottom: 12px; }
+  #tabs button {
+    background: var(--panel); color: var(--dim); border: 1px solid var(--line); border-radius: 8px 8px 0 0;
+    padding: 8px 18px; font-size: 12px; letter-spacing: 2px; cursor: pointer; text-transform: uppercase;
+  }
+  #tabs button.on { color: var(--accent); border-color: var(--accent); background: var(--panel2); }
+  .screen { display: none; } .screen.on { display: block; }
+
+  /* cards shared */
   .row { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; }
   .card {
     background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
     padding: 8px 10px; width: 158px; position: relative; transition: box-shadow .15s, transform .15s;
-    cursor: default;
   }
   .card.active { box-shadow: 0 0 14px var(--accent); border-color: var(--accent); transform: translateY(-2px); }
   .card.targetable { cursor: pointer; border-color: var(--gold); }
@@ -45,66 +55,276 @@
   .chip { font-size: 8px; padding: 0 4px; border-radius: 4px; border: 1px solid; }
   .chip.buff { color: var(--buff); border-color: var(--buff); }
   .chip.debuff { color: var(--debuff); border-color: var(--debuff); }
-  #hud {
-    width: 100%; max-width: 900px; background: var(--panel2); border: 1px solid var(--line);
-    border-radius: 10px; padding: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+
+  /* missions */
+  .mission {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 10px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
   }
+  .mission .info { flex: 1; min-width: 240px; }
+  .mission h3 { font-size: 14px; } .mission h3 em { font-size: 10px; color: var(--dim); font-style: normal; margin-left: 6px; }
+  .mission p { font-size: 11px; color: var(--dim); margin: 3px 0; }
+  .reward { font-size: 11px; color: var(--gold); }
+  .reward.cleared { color: var(--dim); }
+  .launch { background: var(--accent); border: 0; color: #06101c; font-weight: 700; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+  .launch:disabled { background: var(--line); color: var(--dim); cursor: not-allowed; }
+
+  /* hangar */
+  .unit {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px; width: 220px; display: flex; flex-direction: column; gap: 5px;
+  }
+  .unit.r5 { border-color: var(--gold); } .unit.r4 { border-color: var(--purple); }
+  .stars { font-size: 10px; } .r5 .stars { color: var(--gold); } .r4 .stars { color: var(--purple); }
+  .statline { font-size: 10px; color: var(--dim); }
+  .unit select { background: #0d1122; color: var(--text); border: 1px solid var(--line); border-radius: 6px; font-size: 10px; padding: 3px; }
+  .sqbtn { background: none; border: 1px solid var(--line); color: var(--dim); border-radius: 6px; padding: 4px; font-size: 10px; cursor: pointer; }
+  .sqbtn.in { color: var(--accent); border-color: var(--accent); }
+  .shop { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+  .shop h3 { font-size: 12px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-bottom: 8px; text-align: center; }
+  .shopbtn { background: none; border: 1px solid var(--gold); color: var(--gold); border-radius: 6px; padding: 4px 8px; font-size: 10px; cursor: pointer; }
+  .shopbtn:disabled { border-color: var(--line); color: var(--dim); cursor: not-allowed; }
+
+  /* gacha */
+  #banner-panel { background: var(--panel2); border: 1px solid var(--gold); border-radius: 12px; padding: 18px; text-align: center; }
+  #banner-panel h2 { color: var(--gold); letter-spacing: 3px; font-size: 18px; text-transform: uppercase; }
+  #banner-panel .sub { color: var(--dim); font-size: 11px; margin: 6px 0 12px; }
+  .pity { font-size: 11px; margin: 4px 0; color: var(--text); }
+  .pity b { color: var(--gold); }
+  .pullbtns { display: flex; gap: 10px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+  .pullbtns button { background: var(--gold); border: 0; color: #1a1405; font-weight: 700; padding: 12px 22px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .pullbtns button.dev { background: none; border: 1px dashed var(--line); color: var(--dim); font-weight: 400; font-size: 10px; }
+  .pullbtns button:disabled { background: var(--line); color: var(--dim); cursor: not-allowed; }
+  .rates { font-size: 9px; color: var(--dim); margin-top: 10px; }
+
+  /* battle hud */
+  #hud { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   #skills { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
-  .skillbtn {
-    background: #101731; color: var(--text); border: 1px solid var(--accent); border-radius: 8px;
-    padding: 8px 12px; font-size: 12px; cursor: pointer; min-width: 130px; text-align: left;
-  }
+  .skillbtn { background: #101731; color: var(--text); border: 1px solid var(--accent); border-radius: 8px; padding: 8px 12px; font-size: 12px; cursor: pointer; min-width: 130px; text-align: left; }
   .skillbtn:hover:not(:disabled) { background: #1b2547; }
   .skillbtn:disabled { border-color: var(--line); color: var(--dim); cursor: not-allowed; }
   .skillbtn small { display: block; font-size: 9px; color: var(--dim); }
   .ctl { display: flex; gap: 6px; }
-  .ctl button {
-    background: none; border: 1px solid var(--line); color: var(--dim); border-radius: 8px;
-    padding: 8px 10px; font-size: 11px; cursor: pointer;
-  }
+  .ctl button { background: none; border: 1px solid var(--line); color: var(--dim); border-radius: 8px; padding: 8px 10px; font-size: 11px; cursor: pointer; }
   .ctl button.on { color: var(--accent); border-color: var(--accent); }
-  #hint { width: 100%; max-width: 900px; font-size: 11px; color: var(--gold); min-height: 18px; margin: 6px 0; }
-  #logbox {
-    width: 100%; max-width: 900px; height: 150px; overflow-y: auto; background: #0d1122;
-    border: 1px solid var(--line); border-radius: 10px; padding: 8px; font-size: 11px; line-height: 1.5;
-    font-family: ui-monospace, monospace;
-  }
+  #hint { font-size: 11px; color: var(--gold); min-height: 18px; margin: 6px 0; }
+  #logbox { height: 140px; overflow-y: auto; background: #0d1122; border: 1px solid var(--line); border-radius: 10px; padding: 8px; font-size: 11px; line-height: 1.5; font-family: ui-monospace, monospace; margin-top: 8px; }
   #logbox .skill { color: var(--accent); } #logbox .crit { color: var(--gold); }
   #logbox .heal { color: var(--hp); } #logbox .kill { color: var(--hp-low); font-weight: 700; }
   #logbox .buff { color: var(--buff); } #logbox .debuff { color: var(--debuff); }
   #logbox .resist { color: var(--dim); font-style: italic; }
-  #banner {
-    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-    background: rgba(5,8,18,.85); z-index: 10; flex-direction: column; gap: 14px;
-  }
-  #banner h2 { font-size: 34px; letter-spacing: 6px; color: var(--gold); text-transform: uppercase; }
-  #banner button { background: var(--accent); border: 0; color: #06101c; font-weight: 700; padding: 10px 26px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+
+  /* modals */
+  .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(5,8,18,.88); z-index: 10; flex-direction: column; gap: 14px; padding: 20px; }
+  .modal h2 { font-size: 30px; letter-spacing: 5px; text-transform: uppercase; color: var(--gold); text-align: center; }
+  .modal .sub2 { color: var(--text); font-size: 13px; text-align: center; }
+  .modal button.close { background: var(--accent); border: 0; color: #06101c; font-weight: 700; padding: 10px 26px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  #reveal-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 760px; }
+  .pull-card { width: 130px; border-radius: 10px; padding: 10px; text-align: center; border: 2px solid var(--line); background: var(--panel); animation: pop .35s ease; }
+  .pull-card.r5 { border-color: var(--gold); box-shadow: 0 0 18px rgba(255,215,94,.45); }
+  .pull-card.r4 { border-color: var(--purple); box-shadow: 0 0 12px rgba(192,132,252,.35); }
+  .pull-card .pr { font-size: 11px; }
+  .pull-card.r5 .pr { color: var(--gold); } .pull-card.r4 .pr { color: var(--purple); } .pull-card.r3 .pr { color: var(--dim); }
+  .pull-card .pn { font-size: 12px; font-weight: 600; margin: 4px 0; }
+  .pull-card .new { color: var(--hp); font-size: 10px; font-weight: 700; }
+  .pull-card .dupe { color: var(--dim); font-size: 10px; }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 </style>
 </head>
 <body>
-  <h1>Starfall: Eclipse Protocol <small>combat prototype — turn meter · cooldowns · debuff warfare · affinity</small></h1>
-  <div id="battlefield">
-    <div class="row" id="foeRow"></div>
-    <div class="row" id="heroRow"></div>
-  </div>
-  <div id="hint"></div>
-  <div id="hud">
-    <div id="skills"></div>
-    <div class="ctl">
-      <button id="autoBtn">AUTO</button>
-      <button id="fastBtn">2×</button>
-      <button id="restartBtn">RESTART</button>
+  <h1>Starfall: Eclipse Protocol <small>playable prototype — missions · hangar · gacha</small></h1>
+  <div class="wrap">
+    <div id="currencies"></div>
+    <div id="tabs">
+      <button data-s="missions" class="on">Missions</button>
+      <button data-s="hangar">Hangar</button>
+      <button data-s="gacha">Signal Array</button>
+    </div>
+
+    <div id="missions" class="screen on"></div>
+    <div id="hangar" class="screen"></div>
+    <div id="gacha" class="screen"></div>
+
+    <div id="battle" class="screen">
+      <div class="row" id="foeRow"></div>
+      <div class="row" id="heroRow"></div>
+      <div id="hint"></div>
+      <div id="hud">
+        <div id="skills"></div>
+        <div class="ctl">
+          <button id="autoBtn">AUTO</button>
+          <button id="fastBtn">2×</button>
+          <button id="fleeBtn">RETREAT</button>
+        </div>
+      </div>
+      <div id="logbox"></div>
     </div>
   </div>
-  <div id="logbox"></div>
-  <div id="banner"><h2 id="bannerText"></h2><button onclick="restart()">FIGHT AGAIN</button></div>
+
+  <div class="modal" id="endModal">
+    <h2 id="endTitle"></h2>
+    <div class="sub2" id="endRewards"></div>
+    <button class="close" onclick="closeBattle()">CONTINUE</button>
+  </div>
+  <div class="modal" id="revealModal">
+    <h2 style="font-size:20px">Signal Locked</h2>
+    <div id="reveal-grid"></div>
+    <button class="close" onclick="hide('revealModal')">COLLECT</button>
+  </div>
 
 <script src="combat.js"></script>
+<script src="meta.js"></script>
 <script>
-const S = window.Starfall;
-let state, currentActor = null, pendingSkill = null, auto = false, fast = false, busy = false;
-
+const S = window.Starfall, M = window.StarfallMeta;
 const $ = (id) => document.getElementById(id);
+const show = (id) => { $(id).style.display = 'flex'; };
+const hide = (id) => { $(id).style.display = 'none'; };
+const rng = S.makeRng(Date.now() & 0xffffffff);
+
+// ------------------------------------------------------------ profile & save
+
+const SAVE_KEY = 'starfall-proto-v1';
+let profile;
+try { profile = JSON.parse(localStorage.getItem(SAVE_KEY)) || M.newProfile(); }
+catch (e) { profile = M.newProfile(); }
+function save() { localStorage.setItem(SAVE_KEY, JSON.stringify(profile)); renderCurrencies(); }
+
+// ------------------------------------------------------------ shell
+
+function renderCurrencies() {
+  $('currencies').innerHTML =
+    `<span>⬡ Voidglass <b>${profile.voidglass}</b></span>` +
+    `<span>◆ Echo Shards <b>${profile.shards}</b></span>` +
+    `<span>▣ Chronoprint Caches <b>${profile.caches}</b></span>` +
+    `<span>5★ pity <b>${profile.pity5}</b>/90</span>`;
+}
+
+function switchScreen(name) {
+  for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.s === name);
+  for (const s of document.querySelectorAll('.screen')) s.classList.remove('on');
+  $(name).classList.add('on');
+  $('tabs').style.display = name === 'battle' ? 'none' : 'flex';
+  if (name === 'missions') renderMissions();
+  if (name === 'hangar') renderHangar();
+  if (name === 'gacha') renderGacha();
+}
+for (const b of document.querySelectorAll('#tabs button')) b.onclick = () => switchScreen(b.dataset.s);
+
+// ------------------------------------------------------------ missions
+
+function renderMissions() {
+  $('missions').innerHTML = M.ENCOUNTERS.map((e) => {
+    const cleared = profile.cleared[e.id];
+    const r = cleared ? e.repeat : e.firstClear;
+    return `<div class="mission">
+      <div class="info">
+        <h3>${e.name}<em>${e.tier}</em></h3>
+        <p>${e.desc}</p>
+        <div class="reward ${cleared ? 'cleared' : ''}">${cleared ? 'repeat: ' : 'FIRST CLEAR JACKPOT: '}⬡${r.voidglass}${r.caches ? ` + ▣${r.caches}` : ''}</div>
+      </div>
+      <button class="launch" data-e="${e.id}" ${profile.squad.length ? '' : 'disabled'}>LAUNCH ▸</button>
+    </div>`;
+  }).join('') + `<p style="font-size:10px;color:var(--dim);text-align:center">Design pillar on display: first clears pay jackpots, repeats pay little — new challenges are where the rewards are.</p>`;
+  for (const b of document.querySelectorAll('.launch')) b.onclick = () => startBattle(b.dataset.e);
+}
+
+// ------------------------------------------------------------ hangar
+
+function renderHangar() {
+  const names = Object.keys(profile.owned).sort((a, b) => M.UNITS[b].rarity - M.UNITS[a].rarity);
+  const cards = names.map((n) => {
+    const u = M.UNITS[n], o = profile.owned[n];
+    const d = M.withGear(u.def, o.gear);
+    const inSquad = profile.squad.includes(n);
+    const opts = ['<option value="">— no gear —</option>'].concat(Object.entries(M.GEAR_SETS).map(([k, g]) =>
+      `<option value="${k}" ${o.gear === k ? 'selected' : ''}>${g.label} · ${g.desc}</option>`)).join('');
+    return `<div class="unit r${u.rarity}">
+      <div><span class="stars">${'★'.repeat(u.rarity)}</span> <span class="cname">${n}</span>${o.copies > 1 ? ` <span style="font-size:9px;color:var(--dim)">+${o.copies - 1}</span>` : ''}</div>
+      <div class="tagline"><span class="aff ${d.affinity}">${d.affinity}</span> ${d.role}</div>
+      <div class="statline">HP ${d.hp} · ATK ${d.atk} · DEF ${d.def} · SPD ${d.spd}</div>
+      <div class="statline">CRIT ${Math.round(d.critRate * 100)}% · ACC ${d.acc} · RES ${d.res}</div>
+      <select data-n="${n}">${opts}</select>
+      <button class="sqbtn ${inSquad ? 'in' : ''}" data-n="${n}">${inSquad ? '✓ IN SQUAD' : '+ ADD TO SQUAD'}</button>
+    </div>`;
+  }).join('');
+
+  const unownedFives = M.FIVE_STAR_NAMES.filter((n) => !profile.owned[n]);
+  const shop = `<div class="shop"><h3>Echo Exchange — dupes are never wasted</h3><div class="row">` +
+    (unownedFives.length ? unownedFives.map((n) =>
+      `<button class="shopbtn" data-buy="${n}" ${profile.shards >= M.SHARD_PRICE_5 ? '' : 'disabled'}>${n} — ◆${M.SHARD_PRICE_5}</button>`).join('')
+      : '<span style="font-size:10px;color:var(--dim)">all standard 5★ operatives recruited!</span>') +
+    `</div></div>`;
+
+  $('hangar').innerHTML =
+    `<p style="font-size:11px;color:var(--dim);text-align:center;margin-bottom:8px">Squad ${profile.squad.length}/5 — gear costs ▣1 to equip (refunded on unequip). Speed-tune with Velocity; land debuffs with Targeting.</p>` +
+    `<div class="row">${cards}</div>` + shop;
+
+  for (const sel of $('hangar').querySelectorAll('select')) {
+    sel.onchange = () => {
+      if (!M.equipGear(profile, sel.dataset.n, sel.value || null)) sel.value = profile.owned[sel.dataset.n].gear || '';
+      save(); renderHangar();
+    };
+  }
+  for (const b of $('hangar').querySelectorAll('.sqbtn')) {
+    b.onclick = () => {
+      const n = b.dataset.n, i = profile.squad.indexOf(n);
+      if (i >= 0) profile.squad.splice(i, 1);
+      else if (profile.squad.length < 5) profile.squad.push(n);
+      save(); renderHangar();
+    };
+  }
+  for (const b of $('hangar').querySelectorAll('[data-buy]')) {
+    b.onclick = () => { M.shardBuy(profile, b.dataset.buy); save(); renderHangar(); };
+  }
+}
+
+// ------------------------------------------------------------ gacha
+
+function renderGacha() {
+  const soft = profile.pity5 >= 73;
+  $('gacha').innerHTML = `<div id="banner-panel">
+    <h2>Anchor Signal: ${M.FEATURED}</h2>
+    <div class="sub">Featured 5★ operative — Umbral · Attack · no affinity weakness</div>
+    <div class="pity">5★ pity: <b>${profile.pity5}/90</b>${soft ? ' — SOFT PITY ACTIVE, rate rising fast!' : ' (soft pity begins at 74)'}</div>
+    <div class="pity">Next 5★: <b>${profile.guaranteedFeatured ? 'FEATURED GUARANTEED' : '50/50 — lose and the next is guaranteed'}</b></div>
+    <div class="pity">4★ or better guaranteed within: <b>${10 - profile.sinceFour} pull${10 - profile.sinceFour === 1 ? '' : 's'}</b></div>
+    <div class="pullbtns">
+      <button id="p1" ${profile.voidglass >= M.PULL_COST ? '' : 'disabled'}>PULL ×1 — ⬡${M.PULL_COST}</button>
+      <button id="p10" ${profile.voidglass >= M.PULL_COST * 10 ? '' : 'disabled'}>PULL ×10 — ⬡${M.PULL_COST * 10}</button>
+      <button class="dev" id="devGrant">+⬡1600 (dev/tester)</button>
+    </div>
+    <div class="rates">Published rates: 5★ 0.6% (soft pity +6%/pull from 74, hard pity 90) · 4★ 5.1% (min one per 10) · dupes convert to Echo Shards ◆</div>
+  </div>`;
+  $('p1').onclick = () => pulls(1);
+  $('p10').onclick = () => pulls(10);
+  $('devGrant').onclick = () => { profile.voidglass += 1600; save(); renderGacha(); };
+}
+
+function pulls(n) {
+  const results = M.doPulls(profile, n, rng);
+  if (!results) return;
+  save();
+  $('reveal-grid').innerHTML = results.map((r) => `<div class="pull-card r${r.rarity}">
+    <div class="pr">${'★'.repeat(r.rarity)}</div>
+    <div class="pn">${r.name}</div>
+    ${r.isNew ? '<div class="new">NEW OPERATIVE!</div>' : `<div class="dupe">+◆${r.shards}</div>`}
+  </div>`).join('');
+  show('revealModal');
+  renderGacha();
+}
+
+// ------------------------------------------------------------ battle
+
+let bstate = null, currentEnc = null, currentActor = null, pendingSkill = null, auto = false, fast = false;
+
+function startBattle(encId) {
+  currentEnc = M.encounterById(encId);
+  bstate = S.newBattle(undefined, M.squadDefs(profile), currentEnc.foes);
+  currentActor = null; pendingSkill = null;
+  switchScreen('battle');
+  render();
+  loop();
+}
 
 function fxChips(u) {
   return u.effects.map((e) => {
@@ -123,11 +343,11 @@ function card(u) {
   if (pendingSkill !== null && u.alive && targetableSide() === u.side) classes.push('targetable');
   return `<div class="${classes.join(' ')}" data-id="${u.id}">
     <div class="cname">${u.name}</div>
-    <div class="tagline"><span class="aff ${u.affinity}">${u.affinity}</span> ${u.role}${u.enrage && u.enrageStacks ? ` · enrage +${Math.round(u.enrage*u.enrageStacks*100)}%` : ''}</div>
-    <div class="bar"><i class="hpfill ${u.hp/u.maxHp<0.35?'low':''}" style="width:${hpPct}%"></i></div>
-    ${u.shield>0?`<div class="bar"><i class="shieldfill" style="width:${shPct}%"></i></div>`:''}
+    <div class="tagline"><span class="aff ${u.affinity}">${u.affinity}</span> ${u.role}${u.enrage && u.enrageStacks ? ` · enrage +${Math.round(u.enrage * u.enrageStacks * 100)}%` : ''}</div>
+    <div class="bar"><i class="hpfill ${u.hp / u.maxHp < 0.35 ? 'low' : ''}" style="width:${hpPct}%"></i></div>
+    ${u.shield > 0 ? `<div class="bar"><i class="shieldfill" style="width:${shPct}%"></i></div>` : ''}
     <div class="bar"><i class="meterfill" style="width:${mPct}%"></i></div>
-    <div class="nums"><span>${u.hp}/${u.maxHp}</span><span>SPD ${Math.round(S.effStat(u,'spd'))}</span></div>
+    <div class="nums"><span>${u.hp}/${u.maxHp}</span><span>SPD ${Math.round(S.effStat(u, 'spd'))}</span></div>
     <div class="fx">${fxChips(u)}</div>
   </div>`;
 }
@@ -139,48 +359,44 @@ function targetableSide() {
 }
 
 function render() {
-  $('foeRow').innerHTML = state.units.filter((u) => u.side === 'foe').map(card).join('');
-  $('heroRow').innerHTML = state.units.filter((u) => u.side === 'hero').map(card).join('');
-  for (const el of document.querySelectorAll('.card.targetable')) {
-    el.onclick = () => pickTarget(el.dataset.id);
-  }
+  if (!bstate) return;
+  $('foeRow').innerHTML = bstate.units.filter((u) => u.side === 'foe').map(card).join('');
+  $('heroRow').innerHTML = bstate.units.filter((u) => u.side === 'hero').map(card).join('');
+  for (const el of document.querySelectorAll('.card.targetable')) el.onclick = () => pickTarget(el.dataset.id);
   renderSkills();
   renderLog();
 }
 
 function renderSkills() {
   const box = $('skills');
-  if (!currentActor || currentActor.side !== 'hero' || auto || state.winner) {
-    box.innerHTML = `<span style="font-size:11px;color:var(--dim)">${state.winner ? 'battle over' : auto ? 'auto-battle engaged' : 'enemy acting...'}</span>`;
+  if (!currentActor || currentActor.side !== 'hero' || auto || bstate.winner) {
+    box.innerHTML = `<span style="font-size:11px;color:var(--dim)">${bstate.winner ? 'battle over' : auto ? 'auto-battle engaged' : 'enemy acting...'}</span>`;
     return;
   }
   box.innerHTML = currentActor.skills.map((s, i) => {
     const cd = currentActor.cooldowns[i];
     const parts = [];
     if (s.mult) parts.push(`${s.mult}× dmg`);
-    if (s.healPct) parts.push(`heal ${Math.round(s.healPct*100)}%`);
+    if (s.healPct) parts.push(`heal ${Math.round(s.healPct * 100)}%`);
     if (s.cleanse) parts.push('cleanse');
     if (s.tmBoostAllies) parts.push('TM boost');
     if (s.tmDrain) parts.push('TM drain');
     for (const e of s.effects || []) parts.push(S.EFFECTS[e.type].label);
-    return `<button class="skillbtn" data-i="${i}" ${cd>0?'disabled':''}>${s.name}${cd>0?` (${cd})`:''}<small>${parts.join(' · ')||'attack'}${s.cd?` · ${s.cd}t cd`:''}</small></button>`;
+    return `<button class="skillbtn" data-i="${i}" ${cd > 0 ? 'disabled' : ''}>${s.name}${cd > 0 ? ` (${cd})` : ''}<small>${parts.join(' · ') || 'attack'}${s.cd ? ` · ${s.cd}t cd` : ''}</small></button>`;
   }).join('');
-  for (const b of box.querySelectorAll('button:not(:disabled)')) {
-    b.onclick = () => selectSkill(+b.dataset.i);
-  }
+  for (const b of box.querySelectorAll('button:not(:disabled)')) b.onclick = () => selectSkill(+b.dataset.i);
 }
 
 function renderLog() {
   const box = $('logbox');
-  box.innerHTML = state.log.slice(-80).map((l) => `<div class="${l.cls}">${l.text}</div>`).join('');
+  box.innerHTML = bstate.log.slice(-80).map((l) => `<div class="${l.cls}">${l.text}</div>`).join('');
   box.scrollTop = box.scrollHeight;
 }
 
 function selectSkill(i) {
   const s = currentActor.skills[i];
-  if (s.target === 'allEnemies' || s.target === 'allAllies' || s.target === 'self') {
-    act(i, null);
-  } else {
+  if (s.target === 'allEnemies' || s.target === 'allAllies' || s.target === 'self') act(i, null);
+  else {
     pendingSkill = i;
     $('hint').textContent = `${s.name}: choose a ${s.target === 'ally' ? 'ally' : 'target'} ▸`;
     render();
@@ -188,7 +404,7 @@ function selectSkill(i) {
 }
 
 function pickTarget(id) {
-  const t = state.units.find((u) => u.id === id);
+  const t = bstate.units.find((u) => u.id === id);
   const i = pendingSkill;
   pendingSkill = null;
   $('hint').textContent = '';
@@ -196,54 +412,61 @@ function pickTarget(id) {
 }
 
 function act(skillIdx, target) {
-  S.executeTurn(state, currentActor, skillIdx, target);
-  state.winner = S.battleOver(state);
+  S.executeTurn(bstate, currentActor, skillIdx, target);
+  bstate.winner = S.battleOver(bstate);
   currentActor = null;
   render();
   setTimeout(loop, fast ? 220 : 550);
 }
 
 function loop() {
-  if (busy) return;
-  if (state.winner) return endBattle();
-  busy = true;
-  currentActor = S.nextActor(state);
-  busy = false;
+  if (!bstate || bstate.winner) return endBattle();
+  currentActor = S.nextActor(bstate);
   render();
   if (currentActor.side === 'foe' || auto) {
-    const { skillIdx, target } = S.chooseAction(state, currentActor);
-    setTimeout(() => act(skillIdx, target), fast ? 200 : 500);
+    const { skillIdx, target } = S.chooseAction(bstate, currentActor);
+    setTimeout(() => { if (bstate && currentActor) act(skillIdx, target); }, fast ? 200 : 500);
   }
-  // else: wait for player input via skill buttons
 }
 
 function endBattle() {
+  if (!bstate || !bstate.winner) return;
   render();
-  $('bannerText').textContent = state.winner === 'hero' ? 'Victory' : 'Squad Lost';
-  $('bannerText').style.color = state.winner === 'hero' ? 'var(--gold)' : 'var(--hp-low)';
-  $('banner').style.display = 'flex';
+  if (bstate.winner === 'hero') {
+    const r = M.applyVictory(profile, currentEnc.id);
+    save();
+    $('endTitle').textContent = 'Victory';
+    $('endTitle').style.color = 'var(--gold)';
+    $('endRewards').innerHTML = `${r.first ? 'FIRST CLEAR JACKPOT<br>' : ''}+⬡${r.voidglass}${r.caches ? ` &nbsp; +▣${r.caches}` : ''}`;
+  } else {
+    $('endTitle').textContent = 'Squad Lost';
+    $('endTitle').style.color = 'var(--hp-low)';
+    $('endRewards').innerHTML = 'No penalty — regear, reroll the squad, counter the affinity, and try again.';
+  }
+  show('endModal');
 }
 
-function restart() {
-  $('banner').style.display = 'none';
-  state = S.newBattle();
-  currentActor = null; pendingSkill = null;
-  render();
-  loop();
+function closeBattle() {
+  hide('endModal');
+  bstate = null; currentEnc = null; currentActor = null;
+  switchScreen('missions');
 }
 
 $('autoBtn').onclick = () => {
   auto = !auto;
   $('autoBtn').classList.toggle('on', auto);
-  if (auto && currentActor && currentActor.side === 'hero' && !state.winner) {
-    const { skillIdx, target } = S.chooseAction(state, currentActor);
+  if (auto && bstate && currentActor && currentActor.side === 'hero' && !bstate.winner) {
+    const { skillIdx, target } = S.chooseAction(bstate, currentActor);
     act(skillIdx, target);
   } else render();
 };
 $('fastBtn').onclick = () => { fast = !fast; $('fastBtn').classList.toggle('on', fast); };
-$('restartBtn').onclick = restart;
+$('fleeBtn').onclick = () => { bstate = null; closeBattle(); };
 
-restart();
+// ------------------------------------------------------------ boot
+
+renderCurrencies();
+renderMissions();
 </script>
 </body>
 </html>

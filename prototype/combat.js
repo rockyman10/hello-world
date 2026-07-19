@@ -398,7 +398,7 @@ const FOES = [
 
 // ---------------------------------------------------------------- battle setup
 
-function newBattle(seed) {
+function newBattle(seed, heroDefs, foeDefs) {
   const state = {
     rng: makeRng(seed ?? (Date.now() & 0xffffffff)),
     units: [],
@@ -406,8 +406,8 @@ function newBattle(seed) {
     turnCount: 0,
     winner: null,
   };
-  HEROES.forEach((h, i) => state.units.push(makeUnit(h, 'hero', i)));
-  FOES.forEach((f, i) => state.units.push(makeUnit(f, 'foe', i)));
+  (heroDefs || HEROES).forEach((h, i) => state.units.push(makeUnit(h, 'hero', i)));
+  (foeDefs || FOES).forEach((f, i) => state.units.push(makeUnit(f, 'foe', i)));
   // Randomize opening meters slightly so identical speeds don't always tie.
   for (const u of state.units) u.meter = state.rng() * 200;
   log(state, 'Eclipse anomaly detected. Squad engaged!', 'skill');

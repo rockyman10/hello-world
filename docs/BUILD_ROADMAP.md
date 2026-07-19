@@ -46,6 +46,8 @@ Build in this order — each step is playable:
 
 ## Phase 3 — Gacha, Meta & Progression (Weeks 9–12, $0)
 
+> **Status: started.** The prototype now includes the full core loop — missions → Voidglass → gacha (exact pity math: soft 74 / hard 90 / 50-50 / per-10 4★ guarantee) → roster/squad building → gear sets with speed tuning → harder encounters, with localStorage saves. Meta logic is DOM-free in `prototype/meta.js`; the test harness verifies pull rates, both pity guarantees, and encounter win-rate bands.
+
 1. **Pull system:** implement the exact pity math from the spreadsheet (soft pity @74, hard @90, 50/50). Client-side for now; keep the pull logic in one pure function so it can move server-side later untouched.
 2. **Roster & leveling:** level/ascend with two farmable materials max in the slice.
 3. **Pull animation:** one skippable, satisfying sequence (screen crack + rarity color). This single animation carries enormous perceived value — study HSR's.
