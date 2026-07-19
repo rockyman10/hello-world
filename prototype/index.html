@@ -151,6 +151,28 @@
   .r4 .tiername, .pull-card.r4 .tiername { color: var(--purple); }
   .pull-card.r3 .tiername { color: var(--dim); }
   .kinship { font-size: 9px; color: var(--hp); }
+
+  /* reactor + rift + leveling */
+  #reactorStrip {
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 11px;
+  }
+  #reactorStrip b { color: var(--gold); }
+  #reactorStrip button { background: var(--gold); border: 0; color: #1a1405; font-weight: 700; padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: 11px; }
+  #reactorStrip button:disabled { background: var(--line); color: var(--dim); cursor: not-allowed; }
+  .lvlrow { display: flex; gap: 6px; align-items: center; }
+  .lvlrow .lvl { font-size: 10px; color: var(--gold); font-weight: 700; }
+  .lvlbtn { background: none; border: 1px solid var(--gold); color: var(--gold); border-radius: 6px; padding: 2px 8px; font-size: 9px; cursor: pointer; }
+  .lvlbtn:disabled { border-color: var(--line); color: var(--dim); cursor: not-allowed; }
+  .bless {
+    background: var(--panel); border: 1px solid var(--accent); border-radius: 10px;
+    padding: 14px; width: 180px; cursor: pointer; text-align: center;
+  }
+  .bless:hover { box-shadow: 0 0 12px var(--accent); }
+  .bless h4 { font-size: 13px; color: var(--accent); margin-bottom: 6px; }
+  .bless p { font-size: 10px; color: var(--dim); }
+  .depthcard { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; font-size: 11px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .depthcard .dr { color: var(--gold); }
 </style>
 </head>
 <body>
@@ -159,11 +181,13 @@
     <div id="currencies"></div>
     <div id="tabs">
       <button data-s="missions" class="on">Missions</button>
+      <button data-s="rift">Void Rift</button>
       <button data-s="hangar">Hangar</button>
       <button data-s="gacha">Signal Array</button>
     </div>
 
     <div id="missions" class="screen on"></div>
+    <div id="rift" class="screen"></div>
     <div id="hangar" class="screen"></div>
     <div id="gacha" class="screen"></div>
 
@@ -193,6 +217,11 @@
     <div id="reveal-grid"></div>
     <button class="close" onclick="hide('revealModal')">COLLECT</button>
   </div>
+  <div class="modal" id="blessModal">
+    <h2 style="font-size:18px">Choose a Blessing</h2>
+    <div class="sub2" style="color:var(--dim);font-size:11px">The rift offers power to those who descend.</div>
+    <div id="blessChoices" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"></div>
+  </div>
   <div class="modal" id="storyModal">
     <div id="storyBox">
       <div id="storySpeaker"></div>
@@ -215,7 +244,7 @@ const rng = S.makeRng(Date.now() & 0xffffffff);
 
 const SAVE_KEY = 'starfall-proto-v1';
 let profile;
-try { profile = JSON.parse(localStorage.getItem(SAVE_KEY)) || M.newProfile(); }
+try { profile = M.migrateProfile(JSON.parse(localStorage.getItem(SAVE_KEY)) || M.newProfile()); }
 catch (e) { profile = M.newProfile(); }
 function save() { localStorage.setItem(SAVE_KEY, JSON.stringify(profile)); renderCurrencies(); }
 
@@ -224,8 +253,9 @@ function save() { localStorage.setItem(SAVE_KEY, JSON.stringify(profile)); rende
 function renderCurrencies() {
   $('currencies').innerHTML =
     `<span>⬡ Voidglass <b>${profile.voidglass}</b></span>` +
+    `<span>¢ Credits <b>${profile.credits}</b></span>` +
     `<span>◆ Echo Shards <b>${profile.shards}</b></span>` +
-    `<span>▣ Chronoprint Caches <b>${profile.caches}</b></span>` +
+    `<span>▣ Caches <b>${profile.caches}</b></span>` +
     `<span>5★ pity <b>${profile.pity5}</b>/90</span>`;
 }
 
@@ -235,6 +265,7 @@ function switchScreen(name) {
   $(name).classList.add('on');
   $('tabs').style.display = name === 'battle' ? 'none' : 'flex';
   if (name === 'missions') renderMissions();
+  if (name === 'rift') renderRift();
   if (name === 'hangar') renderHangar();
   if (name === 'gacha') renderGacha();
 }
@@ -243,7 +274,13 @@ for (const b of document.querySelectorAll('#tabs button')) b.onclick = () => swi
 // ------------------------------------------------------------ missions
 
 function renderMissions() {
-  $('missions').innerHTML = M.ENCOUNTERS.map((e) => {
+  const pending = M.reactorPending(profile, Date.now());
+  const reactor = `<div id="reactorStrip">
+    <span>☢ <b>Meridian Reactor</b> — your off-duty operatives keep the ship running while you're away.</span>
+    <span>Accrued: <b>¢${pending}</b> (rate ¢${M.reactorRate(profile)}/h, caps at 24h)</span>
+    <button id="collectBtn" ${pending > 0 ? '' : 'disabled'}>COLLECT</button>
+  </div>`;
+  $('missions').innerHTML = reactor + M.ENCOUNTERS.map((e) => {
     const cleared = profile.cleared[e.id];
     const r = cleared ? e.repeat : e.firstClear;
     return `<div class="mission">
@@ -256,6 +293,79 @@ function renderMissions() {
     </div>`;
   }).join('') + `<p style="font-size:10px;color:var(--dim);text-align:center">Design pillar on display: first clears pay jackpots, repeats pay little — new challenges are where the rewards are.</p>`;
   for (const b of document.querySelectorAll('.launch')) b.onclick = () => startBattle(b.dataset.e);
+  $('collectBtn').onclick = () => {
+    const got = M.collectReactor(profile, Date.now());
+    save(); renderMissions();
+    $('hint') && ($('hint').textContent = '');
+    if (got > 0) $('reactorStrip').firstElementChild.innerHTML = `☢ <b>Collected ¢${got}!</b> Reactor cycling...`;
+  };
+}
+
+// ------------------------------------------------------------ void rift
+
+let rift = null; // { depth, hpFrac: {name: frac}, blessings: [ids] }
+
+function renderRift() {
+  const depths = M.RIFT.depths.map((d, i) => `<div class="depthcard">
+    <span><b>Depth ${i + 1}:</b> ${d.name} <span style="color:var(--dim)">(enemy power ×${d.mult})</span></span>
+    <span class="dr">⬡${d.reward.voidglass} + ¢${d.reward.credits}${d.reward.caches ? ` + ▣${d.reward.caches}` : ''}</span>
+  </div>`).join('');
+  $('rift').innerHTML = `
+    <p style="font-size:11px;color:var(--dim);text-align:center;margin-bottom:10px">
+      A fracture in causality. Three depths, one squad, no healing between fights — but each depth cleared offers a <b style="color:var(--accent)">Blessing</b> for the rest of the run.
+      Wounds persist. Retreating keeps everything already earned.
+    </p>
+    ${depths}
+    <div style="text-align:center;margin-top:12px">
+      <button class="launch" id="riftEnter" ${profile.squad.length ? '' : 'disabled'}>ENTER THE RIFT ▸</button>
+    </div>
+    <p style="font-size:10px;color:var(--dim);text-align:center;margin-top:8px">(In the full game this is the weekly premium-currency well — infinitely replayable because the blessings reroll, not because you're forced to.)</p>`;
+  $('riftEnter').onclick = () => {
+    rift = { depth: 0, hpFrac: {}, blessings: [] };
+    startRiftBattle();
+  };
+}
+
+function startRiftBattle() {
+  currentEnc = null;
+  let defs = M.applyBlessings(M.squadDefs(profile), rift.blessings);
+  bstate = S.newBattle(undefined, defs, M.riftFoes(rift.depth));
+  // Wounds persist between depths.
+  for (const u of bstate.units) {
+    if (u.side === 'hero' && rift.hpFrac[u.name] != null) {
+      u.hp = Math.max(1, Math.round(u.maxHp * rift.hpFrac[u.name]));
+    }
+  }
+  bstate.log.push({ text: `— Depth ${rift.depth + 1}: ${M.RIFT.depths[rift.depth].name} —`, cls: 'skill', turn: 0 });
+  for (const id of rift.blessings) {
+    const bl = M.RIFT.blessings.find((x) => x.id === id);
+    if (bl) bstate.log.push({ text: `Blessing active: ${bl.label}`, cls: 'buff', turn: 0 });
+  }
+  currentActor = null; pendingSkill = null;
+  switchScreen('battle');
+  render();
+  loop();
+}
+
+function offerBlessings() {
+  const picks = M.pickBlessings(rng, 3);
+  $('blessChoices').innerHTML = picks.map((b) => `<div class="bless" data-b="${b.id}">
+    <h4>${b.label}</h4><p>${b.desc}</p>
+  </div>`).join('');
+  for (const el of $('blessChoices').querySelectorAll('.bless')) {
+    el.onclick = () => {
+      const b = M.RIFT.blessings.find((x) => x.id === el.dataset.b);
+      if (b.heal) {
+        for (const n of Object.keys(rift.hpFrac)) rift.hpFrac[n] = Math.min(1, rift.hpFrac[n] + b.heal);
+      } else {
+        rift.blessings.push(b.id);
+      }
+      hide('blessModal');
+      rift.depth++;
+      startRiftBattle();
+    };
+  }
+  show('blessModal');
 }
 
 // ------------------------------------------------------------ hangar
@@ -265,8 +375,13 @@ function renderHangar() {
   const bonded = M.kinshipFactions(profile.squad.filter((n) => profile.owned[n]).slice(0, 5));
   const cards = names.map((n) => {
     const u = M.UNITS[n], o = profile.owned[n];
-    const d = M.withGear(u.def, o.gear);
+    const d = M.withGear(M.withLevel(u.def, o.level), o.gear);
     const inSquad = profile.squad.includes(n);
+    const lvl = o.level || 1;
+    const lvlCost = M.levelUpCost(lvl);
+    const lvlRow = lvl >= M.LEVEL_CAP
+      ? `<div class="lvlrow"><span class="lvl">Lv ${lvl}</span><span style="font-size:9px;color:var(--dim)">MAX</span></div>`
+      : `<div class="lvlrow"><span class="lvl">Lv ${lvl}</span><button class="lvlbtn" data-lvl="${n}" ${profile.credits >= lvlCost ? '' : 'disabled'}>LEVEL UP — ¢${lvlCost}</button></div>`;
     const lore = M.LORE[n] || {};
     const fac = M.FACTIONS[lore.faction];
     const hasKinship = inSquad && bonded.includes(lore.faction);
@@ -276,6 +391,7 @@ function renderHangar() {
       <div><span class="stars">${'★'.repeat(u.rarity)}</span> <span class="tiername">${M.RARITY_NAMES[u.rarity]}</span> <span class="cname">${n}</span>${o.copies > 1 ? ` <span style="font-size:9px;color:var(--dim)">+${o.copies - 1}</span>` : ''}</div>
       <div class="epithet">“${lore.epithet || ''}”</div>
       <div class="tagline"><span class="aff ${d.affinity}">${d.affinity}</span> ${d.role} ${fac ? `<span class="fac" style="color:${fac.color};border-color:${fac.color}">${fac.label}</span>` : ''}</div>
+      ${lvlRow}
       <div class="statline">HP ${d.hp} · ATK ${d.atk} · DEF ${d.def} · SPD ${d.spd}</div>
       <div class="statline">CRIT ${Math.round(d.critRate * 100)}% · ACC ${d.acc} · RES ${d.res}</div>
       ${hasKinship ? `<div class="kinship">✦ Kinship Protocol: +${Math.round(M.KINSHIP.atk * 100)}% ATK/DEF in battle</div>` : ''}
@@ -315,6 +431,9 @@ function renderHangar() {
   }
   for (const b of $('hangar').querySelectorAll('[data-buy]')) {
     b.onclick = () => { M.shardBuy(profile, b.dataset.buy); save(); renderHangar(); };
+  }
+  for (const b of $('hangar').querySelectorAll('[data-lvl]')) {
+    b.onclick = () => { M.levelUp(profile, b.dataset.lvl); save(); renderHangar(); };
   }
 }
 
@@ -532,6 +651,25 @@ let pendingOutro = null;
 function endBattle() {
   if (!bstate || !bstate.winner) return;
   render();
+  if (rift) {
+    if (bstate.winner === 'hero') {
+      for (const u of bstate.units) {
+        if (u.side === 'hero') rift.hpFrac[u.name] = u.alive ? u.hp / u.maxHp : 0.05;
+      }
+      const r = M.riftReward(profile, rift.depth);
+      save();
+      const last = rift.depth >= M.RIFT.depths.length - 1;
+      $('endTitle').textContent = last ? 'Rift Conquered' : `Depth ${rift.depth + 1} Cleared`;
+      $('endTitle').style.color = 'var(--gold)';
+      $('endRewards').innerHTML = `+⬡${r.voidglass} &nbsp; +¢${r.credits}${r.caches ? ` &nbsp; +▣${r.caches}` : ''}${last ? '<br>Full clear — the rift reseals until it stirs again.' : '<br>Choose a blessing and descend.'}`;
+    } else {
+      $('endTitle').textContent = 'Run Collapsed';
+      $('endTitle').style.color = 'var(--hp-low)';
+      $('endRewards').innerHTML = `The rift keeps nothing you earned — depths already cleared stay paid. Deeper next time.`;
+    }
+    show('endModal');
+    return;
+  }
   if (bstate.winner === 'hero') {
     const firstTime = !profile.cleared[currentEnc.id];
     const story = M.STORY[currentEnc.id];
@@ -540,7 +678,7 @@ function endBattle() {
     save();
     $('endTitle').textContent = 'Victory';
     $('endTitle').style.color = 'var(--gold)';
-    $('endRewards').innerHTML = `${r.first ? 'FIRST CLEAR JACKPOT<br>' : ''}+⬡${r.voidglass}${r.caches ? ` &nbsp; +▣${r.caches}` : ''}`;
+    $('endRewards').innerHTML = `${r.first ? 'FIRST CLEAR JACKPOT<br>' : ''}+⬡${r.voidglass}${r.credits ? ` &nbsp; +¢${r.credits}` : ''}${r.caches ? ` &nbsp; +▣${r.caches}` : ''}`;
   } else {
     $('endTitle').textContent = 'Squad Lost';
     $('endTitle').style.color = 'var(--hp-low)';
@@ -551,6 +689,15 @@ function endBattle() {
 
 function closeBattle() {
   hide('endModal');
+  if (rift) {
+    const won = bstate && bstate.winner === 'hero';
+    const last = rift.depth >= M.RIFT.depths.length - 1;
+    bstate = null; currentActor = null;
+    if (won && !last) { offerBlessings(); return; }
+    rift = null;
+    switchScreen('rift');
+    return;
+  }
   bstate = null; currentEnc = null; currentActor = null;
   const outro = pendingOutro;
   pendingOutro = null;
@@ -567,7 +714,7 @@ $('autoBtn').onclick = () => {
   } else render();
 };
 $('fastBtn').onclick = () => { fast = !fast; $('fastBtn').classList.toggle('on', fast); };
-$('fleeBtn').onclick = () => { bstate = null; closeBattle(); };
+$('fleeBtn').onclick = () => { bstate = null; rift = null; currentEnc = null; currentActor = null; hide('endModal'); switchScreen('missions'); };
 
 // ------------------------------------------------------------ boot
 

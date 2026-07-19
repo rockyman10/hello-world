@@ -109,7 +109,7 @@ The **Meridian** ship: assign off-squad units to modules (Reactor = currency, Bi
 | Credits | Everywhere | Leveling |
 | Echo Shards | Dupe pulls | Pity shop |
 
-### Monetization ladder (design target, all optional)
+### Monetization ladder (design target, all optional — full strategy in `MONETIZATION.md`)
 1. **Monthly Pass (~$5):** small instant grant + daily premium drip — best value, aimed at the mass market.
 2. **Battle Pass (~$10/patch):** cosmetic + material track.
 3. **Direct top-ups** with first-time double bonus.

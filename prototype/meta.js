@@ -138,7 +138,7 @@ const ENCOUNTERS = [
   {
     id: 'sweep', name: 'Perimeter Sweep', tier: 'Story I',
     desc: 'Clear the drone patrol around the Meridian. A warm-up.',
-    firstClear: { voidglass: 800, caches: 1 }, repeat: { voidglass: 40, caches: 0 },
+    firstClear: { voidglass: 800, caches: 1, credits: 500 }, repeat: { voidglass: 40, caches: 0, credits: 100 },
     foes: [
       { name: 'Patrol Drone α', affinity: 'ion', role: 'Add', hp: 6500, atk: 750, def: 400, spd: 108, critRate: 0.1, critDmg: 1.5, acc: 120, res: 80,
         skills: [{ name: 'Zap', mult: 1.0, target: 'enemy' }, { name: 'Twin Zap', cd: 3, mult: 0.8, target: 'allEnemies' }] },
@@ -151,7 +151,7 @@ const ENCOUNTERS = [
   {
     id: 'cryocell', name: 'Affinity Gauntlet: Cryo Cell', tier: 'Story II',
     desc: 'An all-Cryo echo cell. Ion units gain advantage; Plasma units weak-hit and miss debuffs. Bring Accuracy for the leader.',
-    firstClear: { voidglass: 1300, caches: 2 }, repeat: { voidglass: 60, caches: 0 },
+    firstClear: { voidglass: 1300, caches: 2, credits: 900 }, repeat: { voidglass: 60, caches: 0, credits: 150 },
     foes: [
       { name: 'Frost Echo A', affinity: 'cryo', role: 'Add', hp: 10000, atk: 1250, def: 550, spd: 112, critRate: 0.15, critDmg: 1.6, acc: 160, res: 180,
         skills: [{ name: 'Frost Bolt', mult: 1.0, target: 'enemy' }, { name: 'Deep Chill', cd: 3, mult: 1.3, target: 'enemy', effects: [{ type: 'jam', turns: 2, chance: 0.5 }] }] },
@@ -168,7 +168,7 @@ const ENCOUNTERS = [
   {
     id: 'warden', name: 'Boss: Paradox Warden', tier: 'Story III',
     desc: 'The Warden regenerates unless Heal Blackout is on it, and enrages as the fight drags. Kill it fast — or shut its healing down.',
-    firstClear: { voidglass: 2400, caches: 2 }, repeat: { voidglass: 80, caches: 0 },
+    firstClear: { voidglass: 2400, caches: 2, credits: 1500 }, repeat: { voidglass: 80, caches: 0, credits: 200 },
     foes: S.FOES,
   },
 ];
@@ -229,19 +229,137 @@ function newProfile() {
     voidglass: 1600, // opening recruitment grant: one free 10-pull
     shards: 0,
     caches: 2,
+    credits: 2000,
+    lastCollect: Date.now(),
     pity5: 0,
     sinceFour: 0,
     guaranteedFeatured: false,
     totalPulls: 0,
-    owned: {},      // name -> { copies, gear }
+    owned: {},      // name -> { copies, gear, level }
     squad: [],
     cleared: {},    // encounter id -> true
   };
   for (const name of ['Mika Tan', 'Dex Volkov', 'Ora Chen']) {
-    p.owned[name] = { copies: 1, gear: null };
+    p.owned[name] = { copies: 1, gear: null, level: 1 };
     p.squad.push(name);
   }
   return p;
+}
+
+// Upgrade older saves in place.
+function migrateProfile(p) {
+  if (p.credits == null) p.credits = 0;
+  if (p.lastCollect == null) p.lastCollect = Date.now();
+  for (const o of Object.values(p.owned)) if (o.level == null) o.level = 1;
+  return p;
+}
+
+// ---------------------------------------------------------------- leveling
+
+const LEVEL_CAP = 30;
+const LEVEL_BONUS = 0.02; // +2% HP/ATK/DEF per level above 1
+
+function withLevel(def, level) {
+  const m = 1 + LEVEL_BONUS * ((level || 1) - 1);
+  if (m === 1) return def;
+  return { ...def, hp: Math.round(def.hp * m), atk: Math.round(def.atk * m), def: Math.round(def.def * m) };
+}
+
+function levelUpCost(level) { return 150 * level; }
+
+function levelUp(profile, name) {
+  const o = profile.owned[name];
+  if (!o) return false;
+  const lvl = o.level || 1;
+  if (lvl >= LEVEL_CAP) return false;
+  const cost = levelUpCost(lvl);
+  if (profile.credits < cost) return false;
+  profile.credits -= cost;
+  o.level = lvl + 1;
+  return true;
+}
+
+// ---------------------------------------------------------------- Meridian reactor (idle)
+// Grind is passive: off-squad operatives crew the ship, Credits accrue while away.
+
+const REACTOR = { basePerHour: 400, perUnitPerHour: 40, capHours: 24 };
+
+function reactorRate(profile) {
+  return REACTOR.basePerHour + REACTOR.perUnitPerHour * Object.keys(profile.owned).length;
+}
+
+function reactorPending(profile, now) {
+  const hours = Math.min(REACTOR.capHours, Math.max(0, (now - profile.lastCollect) / 3600000));
+  return Math.floor(hours * reactorRate(profile));
+}
+
+function collectReactor(profile, now) {
+  const amount = reactorPending(profile, now);
+  profile.credits += amount;
+  profile.lastCollect = now;
+  return amount;
+}
+
+// ---------------------------------------------------------------- Void Rift (roguelite)
+
+const RIFT = {
+  blessings: [
+    { id: 'surge',   label: 'Ion Surge',       desc: '+20% ATK for the rest of the run',  atk: 0.20 },
+    { id: 'bulwark', label: 'Causal Bulwark',  desc: '+20% DEF for the rest of the run',  def: 0.20 },
+    { id: 'tempo',   label: 'Tachyon Tempo',   desc: '+12% SPD for the rest of the run',  spd: 0.12 },
+    { id: 'lens',    label: 'Predictive Lens', desc: '+20% crit chance for the run',      critRate: 0.20 },
+    { id: 'lock',    label: 'Signal Lock',     desc: '+60 ACC for the run',               acc: 60 },
+    { id: 'repair',  label: 'Field Repair',    desc: 'Restore 40% HP to the squad, now',  heal: 0.40 },
+  ],
+  depths: [
+    { name: 'Rift Shallows',            mult: 1.25, foesFrom: 'sweep',    reward: { voidglass: 250, credits: 800 } },
+    { name: 'Rift Midnight',            mult: 1.05, foesFrom: 'cryocell', reward: { voidglass: 450, credits: 1500 } },
+    { name: 'Rift Floor: Warden Echo',  mult: 1.10, foesFrom: 'warden',   reward: { voidglass: 800, credits: 3000, caches: 1 } },
+  ],
+};
+
+function scaleDef(d, mult) {
+  return { ...d, hp: Math.round(d.hp * mult), atk: Math.round(d.atk * mult), def: Math.round(d.def * mult) };
+}
+
+function riftFoes(depthIdx) {
+  const dp = RIFT.depths[depthIdx];
+  return encounterById(dp.foesFrom).foes.map((f) => scaleDef(f, dp.mult));
+}
+
+function applyBlessings(defs, blessingIds) {
+  const mods = { atk: 0, def: 0, spd: 0, critRate: 0, acc: 0 };
+  for (const id of blessingIds) {
+    const b = RIFT.blessings.find((x) => x.id === id);
+    if (!b) continue;
+    mods.atk += b.atk || 0; mods.def += b.def || 0; mods.spd += b.spd || 0;
+    mods.critRate += b.critRate || 0; mods.acc += b.acc || 0;
+  }
+  return defs.map((d) => ({
+    ...d,
+    atk: Math.round(d.atk * (1 + mods.atk)),
+    def: Math.round(d.def * (1 + mods.def)),
+    spd: Math.round(d.spd * (1 + mods.spd)),
+    critRate: d.critRate + mods.critRate,
+    acc: d.acc + mods.acc,
+  }));
+}
+
+function pickBlessings(rng, count) {
+  const pool = RIFT.blessings.slice();
+  const out = [];
+  while (out.length < (count || 3) && pool.length) {
+    out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+  }
+  return out;
+}
+
+function riftReward(profile, depthIdx) {
+  const r = RIFT.depths[depthIdx].reward;
+  profile.voidglass += r.voidglass || 0;
+  profile.credits += r.credits || 0;
+  profile.caches += r.caches || 0;
+  return r;
 }
 
 function kinshipFactions(names) {
@@ -257,7 +375,7 @@ function squadDefs(profile) {
   const names = profile.squad.filter((n) => profile.owned[n]).slice(0, 5);
   const bonded = kinshipFactions(names);
   return names.map((n) => {
-    let d = withGear(UNITS[n].def, profile.owned[n].gear);
+    let d = withGear(withLevel(UNITS[n].def, profile.owned[n].level), profile.owned[n].gear);
     const f = LORE[n] && LORE[n].faction;
     if (f && bonded.includes(f)) {
       d = { ...d, atk: Math.round(d.atk * (1 + KINSHIP.atk)), def: Math.round(d.def * (1 + KINSHIP.def)) };
@@ -315,7 +433,7 @@ function grant(profile, name, rarity) {
     profile.shards += shards;
     return { rarity, name, isNew: false, shards };
   }
-  profile.owned[name] = { copies: 1, gear: null };
+  profile.owned[name] = { copies: 1, gear: null, level: 1 };
   return { rarity, name, isNew: true, shards: 0 };
 }
 
@@ -360,6 +478,7 @@ function applyVictory(profile, encId) {
   profile.cleared[encId] = true;
   profile.voidglass += r.voidglass;
   profile.caches += r.caches;
+  profile.credits += r.credits || 0;
   return { first, ...r };
 }
 
@@ -367,7 +486,10 @@ return {
   PULL_COST, SHARD_PRICE_5, UNITS, FOUR_STARS, FIVE_STAR_NAMES, FOUR_STAR_NAMES, FEATURED,
   RARITY_NAMES, FACTIONS, LORE, KINSHIP, STORY,
   GEAR_SETS, ENCOUNTERS, encounterById,
-  newProfile, squadDefs, withGear, kinshipFactions,
+  LEVEL_CAP, withLevel, levelUpCost, levelUp,
+  REACTOR, reactorRate, reactorPending, collectReactor,
+  RIFT, scaleDef, riftFoes, applyBlessings, pickBlessings, riftReward,
+  newProfile, migrateProfile, squadDefs, withGear, kinshipFactions,
   fiveStarChance, pullOne, doPulls, shardBuy, equipGear, applyVictory,
 };
 });
