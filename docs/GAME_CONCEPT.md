@@ -48,6 +48,8 @@ You are the **Navigator**, a human who can perceive stable timelines inside Ecli
 ### The Voidborn
 Engineered post-humans, each built from a **Genome Archive** of pre-Eclipse Earth cultures — giving huge visual/character variety (a samurai-lineage frame pilot, a Nordic deep-void salvager, an Afrofuturist bio-hacker, a retro-cassette-punk AI idol). Each carries a fragment of a lost timeline, which fuels character stories.
 
+Every Voidborn belongs to one of **five Genome Houses** — the ark's "space tribes" (House Vantar, The Chorus, Rimeholt Combine, Helix Gardens, The Frameguard), with the **Eclipsed** as the enemy faction. Houses are mechanical, not just flavor: same-House squads trigger the **Kinship Protocol** stat bonus, and faction-gated endgame (House Vaults) makes collection depth matter. Full faction cultures, character dossiers, and the Chapter 1 storyline live in **`LORE.md`**.
+
 ### Story structure
 - **Main chapters** = star systems. Each system has its own culture, crisis, faction conflict, and a "Paradox Lord" boss.
 - **Character stories** unlock via bond levels and item gifts (Nikke-style advise sessions).
@@ -87,10 +89,11 @@ The **Meridian** ship: assign off-squad units to modules (Reactor = currency, Bi
 
 ## 5. Gacha & Economy Design
 
-### Rarities
-- **5★ Voidborn** — 0.6% base rate
-- **4★ Voidborn** — 5.1% rate, at least one per 10-pull
-- **3★ Cores** (weapon-equivalent) — filler
+### Rarities (in-world tier names — see `LORE.md`)
+- **5★ PRIME** — 0.6% base rate (the "Legendary" tier)
+- **4★ VECTOR** — 5.1% rate, at least one per 10-pull (the "Epic" tier)
+- **3★ STRAND** — filler, salvages into Echo Shards
+- **6★ SINGULARITY** — reserved future mythic tier for limited units
 
 ### Pity (industry-standard, transparent, published in-game)
 - **Soft pity** from pull 74 (rate climbs steeply), **hard pity at 90**.

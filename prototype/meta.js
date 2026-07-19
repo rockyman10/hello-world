@@ -68,6 +68,46 @@ const FIVE_STAR_NAMES = S.HEROES.map((d) => d.name);
 const FOUR_STAR_NAMES = FOUR_STARS.map((d) => d.name);
 const FEATURED = 'Kaelis Vantar';
 
+// ---------------------------------------------------------------- lore
+
+// In-world rarity tier names (see docs/LORE.md).
+const RARITY_NAMES = { 3: 'STRAND', 4: 'VECTOR', 5: 'PRIME', 6: 'SINGULARITY' };
+
+const FACTIONS = {
+  vantar:     { label: 'House Vantar',     color: '#c084fc' },
+  chorus:     { label: 'The Chorus',       color: '#5ee0ff' },
+  rimeholt:   { label: 'Rimeholt Combine', color: '#a5b4fc' },
+  helix:      { label: 'Helix Gardens',    color: '#4ade80' },
+  frameguard: { label: 'The Frameguard',   color: '#fdba74' },
+  eclipsed:   { label: 'The Eclipsed',     color: '#f472b6' },
+};
+
+const LORE = {
+  'Kaelis Vantar':  { faction: 'vantar', epithet: 'The Unwritten Blade',
+    bio: 'Heir of the Void Compact. The Eclipse rewrote him into the enforcer of the Paradox Lord Sable-of-Nine — until the Navigator\'s anchor signal cut him loose. Somewhere in a rewritten timeline, a version of him still serves. He intends to erase it.' },
+  'Juno-9':         { faction: 'chorus', epithet: 'The Signal Saint',
+    bio: 'An AI grown from the archived voice of a pre-Eclipse idol. Nine iterations have burned out keeping the morale grid alive; this one writes her own songs. Her concerts are also jamming arrays.' },
+  'Solveig Rask':   { faction: 'rimeholt', epithet: 'Hullbreaker',
+    bio: 'Third-generation salvager. Cut open a derelict at nineteen and found echo-copies of her own clan still working the wreck. Sealed the hull, said nothing for six years. Pays her debts in corrosion now.' },
+  'Adaeze Okonkwo': { faction: 'helix', epithet: 'The Gardener',
+    bio: 'Chief gene-artisan of Helix Gardens; half the Voidborn genome library is her handwriting. Overheals on purpose: "growth beyond the wound is the whole point."' },
+  'Renji Kurosawa': { faction: 'frameguard', epithet: 'The Last Standard',
+    bio: 'Pilots the frame his family has maintained for eleven generations; its armor carries a smear of Earth soil under lacquer. The last time a Kurosawa broke formation was never.' },
+  'Mika Tan':       { faction: 'chorus', epithet: 'The Static Cartographer',
+    bio: 'Chorus signal-tech who maps enemy shield harmonics live on air — every Armor Breach she lands is, technically, a broadcast hit single. The first friend every Navigator makes.' },
+  'Dex Volkov':     { faction: 'rimeholt', epithet: 'Cutter',
+    bio: 'Plasma-torch specialist. Burns salvage loose and enemies looser. Owes Solveig either three life-debts or four; they\'ve stopped counting in front of witnesses.' },
+  'Vex Marlowe':    { faction: 'vantar', epithet: 'The Storm Privateer',
+    bio: 'Runs contraband along the fracture lanes under a Vantar letter of marque. Insists the letter is genuine. The seal is upside down.' },
+  'Ora Chen':       { faction: 'helix', epithet: 'Coldhands',
+    bio: 'Cryo-surgeon. Keeps hearts beating at three kelvin and considers warmth a rumor. Trained under Adaeze; disagrees with her about everything except patients.' },
+  'Brick-7':        { faction: 'frameguard', epithet: 'The Door',
+    bio: 'A decommissioned breach-frame that refused to power down and walked to the Frameguard chapterhouse to take the oath. Legally a door. The Frameguard\'s most beloved member.' },
+};
+
+// Kinship Protocol: 2+ squad members of the same House each gain +12% ATK/DEF.
+const KINSHIP = { atk: 0.12, def: 0.12, minCount: 2 };
+
 // ---------------------------------------------------------------- gear sets
 
 const GEAR_SETS = {
@@ -135,6 +175,53 @@ const ENCOUNTERS = [
 
 function encounterById(id) { return ENCOUNTERS.find((e) => e.id === id); }
 
+// ---------------------------------------------------------------- chapter 1 story
+// Speakers: unit names (colored by House), NAVIGATOR (the player), MERIDIAN (ship AI).
+
+const STORY = {
+  sweep: {
+    intro: [
+      { who: 'MERIDIAN', text: 'Anchor-sleep terminated. Navigator vitals green. Welcome back to the year everyone else already lived through.' },
+      { who: 'Mika Tan', text: 'Told you the anchor would hold! Navigator, hi, big fan, ALSO we have Eclipsed drones on the hull.' },
+      { who: 'Dex Volkov', text: 'Patrol pattern. Something sent them sniffing. Cutter\'s hot — point me.' },
+      { who: 'Ora Chen', text: 'Vitals are mine, drones are yours. Try not to make more work for me.' },
+      { who: 'NAVIGATOR', text: 'Anchoring squad. If I can hold a timeline steady, I can hold three of you. Move.' },
+    ],
+    outro: [
+      { who: 'Dex Volkov', text: 'Wreckage is clean salvage... wait. That\'s a Rimeholt distress beacon. Clan Rask\'s marking.' },
+      { who: 'Mika Tan', text: 'That clan was logged lost thirty years ago. Beacons don\'t start crying after thirty years.' },
+      { who: 'NAVIGATOR', text: 'This one did. Chart the source. We\'re going to look.' },
+    ],
+  },
+  cryocell: {
+    intro: [
+      { who: 'MERIDIAN', text: 'Salvage yard located. Life signs: seventeen. Life signs, Navigator, are the wrong word for what I am reading.' },
+      { who: 'Ora Chen', text: 'They\'re copies. Echoes. The Eclipse didn\'t kill this clan — it preserved them wrongly. They\'ve been running the same shift for thirty years.' },
+      { who: 'Mika Tan', text: 'All-Cryo signatures, heavy resistance fields. Ion harmonics will cut through — plasma\'s going to splash. Building the breach map now.' },
+      { who: 'NAVIGATOR', text: 'We end the shift. Anchors up.' },
+    ],
+    outro: [
+      { who: 'Ora Chen', text: 'One echo stabilized before it dissolved. It kept saying a word. "Warden."' },
+      { who: 'MERIDIAN', text: 'Cross-reference: a Paradox Warden — an Eclipsed anchor-organism. Where a Warden stands, a rewrite holds. This yard is being *maintained*.' },
+      { who: 'NAVIGATOR', text: 'Then we unwrite it. Find me the Warden.' },
+    ],
+  },
+  warden: {
+    intro: [
+      { who: 'MERIDIAN', text: 'There. The heart of the yard. It is healing the timeline around it faster than reality can wound it.' },
+      { who: 'Mika Tan', text: 'Translation: it regenerates unless you blackout its healing loop. Or kill it before it learns your tempo — it gets angrier the longer you take.' },
+      { who: 'Ora Chen', text: 'Everyone comes back from this one. That\'s a medical order.' },
+      { who: 'NAVIGATOR', text: 'Sever the loop. The clan rests today.' },
+    ],
+    outro: [
+      { who: 'MERIDIAN', text: 'Warden terminated. Rewrite collapsing. Seventeen echoes... resolving. At rest. Logging clan Rask: found, and finished.' },
+      { who: 'Mika Tan', text: '...Navigator? There\'s a voice on a dead channel. It\'s not a distress call. It\'s addressed to us.' },
+      { who: 'SABLE-OF-NINE', text: 'You\'ve unwritten my Warden, little Navigator. I felt it from nine timelines away. Kaelis — come home.' },
+      { who: 'NAVIGATOR', text: 'End of Chapter One. (Chapter Two: House Vantar knows that voice.)' },
+    ],
+  },
+};
+
 // ---------------------------------------------------------------- profile
 
 function newProfile() {
@@ -157,11 +244,26 @@ function newProfile() {
   return p;
 }
 
+function kinshipFactions(names) {
+  const counts = {};
+  for (const n of names) {
+    const f = LORE[n] && LORE[n].faction;
+    if (f) counts[f] = (counts[f] || 0) + 1;
+  }
+  return Object.keys(counts).filter((f) => counts[f] >= KINSHIP.minCount);
+}
+
 function squadDefs(profile) {
-  return profile.squad
-    .filter((n) => profile.owned[n])
-    .slice(0, 5)
-    .map((n) => withGear(UNITS[n].def, profile.owned[n].gear));
+  const names = profile.squad.filter((n) => profile.owned[n]).slice(0, 5);
+  const bonded = kinshipFactions(names);
+  return names.map((n) => {
+    let d = withGear(UNITS[n].def, profile.owned[n].gear);
+    const f = LORE[n] && LORE[n].faction;
+    if (f && bonded.includes(f)) {
+      d = { ...d, atk: Math.round(d.atk * (1 + KINSHIP.atk)), def: Math.round(d.def * (1 + KINSHIP.def)) };
+    }
+    return d;
+  });
 }
 
 // ---------------------------------------------------------------- gacha
@@ -200,7 +302,7 @@ function pullOne(profile, rng) {
     profile.pity5++;
     profile.sinceFour++;
     profile.shards += 2;
-    result = { rarity: 3, name: 'Salvage Core', isNew: false, shards: 2 };
+    result = { rarity: 3, name: 'Salvage Strand', isNew: false, shards: 2 };
   }
   return result;
 }
@@ -263,8 +365,9 @@ function applyVictory(profile, encId) {
 
 return {
   PULL_COST, SHARD_PRICE_5, UNITS, FOUR_STARS, FIVE_STAR_NAMES, FOUR_STAR_NAMES, FEATURED,
+  RARITY_NAMES, FACTIONS, LORE, KINSHIP, STORY,
   GEAR_SETS, ENCOUNTERS, encounterById,
-  newProfile, squadDefs, withGear,
+  newProfile, squadDefs, withGear, kinshipFactions,
   fiveStarChance, pullOne, doPulls, shardBuy, equipGear, applyVictory,
 };
 });

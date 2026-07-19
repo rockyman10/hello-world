@@ -129,6 +129,28 @@
   .pull-card .new { color: var(--hp); font-size: 10px; font-weight: 700; }
   .pull-card .dupe { color: var(--dim); font-size: 10px; }
   @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  /* story */
+  #storyBox {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 22px 26px; max-width: 620px; width: 90%; cursor: pointer; min-height: 140px;
+  }
+  #storySpeaker { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
+  #storyText { font-size: 14px; line-height: 1.6; }
+  #storyNext { font-size: 10px; color: var(--dim); margin-top: 14px; text-align: right; }
+  #storySkip { background: none; border: 1px solid var(--line); color: var(--dim); border-radius: 8px; padding: 6px 16px; font-size: 11px; cursor: pointer; }
+
+  /* lore in hangar */
+  .fac { display: inline-block; padding: 0 6px; border-radius: 6px; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; border: 1px solid; font-weight: 700; }
+  .epithet { font-size: 9px; color: var(--dim); font-style: italic; }
+  .unit details { font-size: 10px; color: var(--dim); }
+  .unit details summary { cursor: pointer; color: var(--accent); font-size: 9px; letter-spacing: 1px; }
+  .unit details p { margin-top: 4px; line-height: 1.5; }
+  .tiername { font-size: 8px; letter-spacing: 2px; font-weight: 700; }
+  .r5 .tiername, .pull-card.r5 .tiername { color: var(--gold); }
+  .r4 .tiername, .pull-card.r4 .tiername { color: var(--purple); }
+  .pull-card.r3 .tiername { color: var(--dim); }
+  .kinship { font-size: 9px; color: var(--hp); }
 </style>
 </head>
 <body>
@@ -170,6 +192,14 @@
     <h2 style="font-size:20px">Signal Locked</h2>
     <div id="reveal-grid"></div>
     <button class="close" onclick="hide('revealModal')">COLLECT</button>
+  </div>
+  <div class="modal" id="storyModal">
+    <div id="storyBox">
+      <div id="storySpeaker"></div>
+      <div id="storyText"></div>
+      <div id="storyNext">▸ click to continue</div>
+    </div>
+    <button id="storySkip">SKIP</button>
   </div>
 
 <script src="combat.js"></script>
@@ -232,17 +262,24 @@ function renderMissions() {
 
 function renderHangar() {
   const names = Object.keys(profile.owned).sort((a, b) => M.UNITS[b].rarity - M.UNITS[a].rarity);
+  const bonded = M.kinshipFactions(profile.squad.filter((n) => profile.owned[n]).slice(0, 5));
   const cards = names.map((n) => {
     const u = M.UNITS[n], o = profile.owned[n];
     const d = M.withGear(u.def, o.gear);
     const inSquad = profile.squad.includes(n);
+    const lore = M.LORE[n] || {};
+    const fac = M.FACTIONS[lore.faction];
+    const hasKinship = inSquad && bonded.includes(lore.faction);
     const opts = ['<option value="">— no gear —</option>'].concat(Object.entries(M.GEAR_SETS).map(([k, g]) =>
       `<option value="${k}" ${o.gear === k ? 'selected' : ''}>${g.label} · ${g.desc}</option>`)).join('');
     return `<div class="unit r${u.rarity}">
-      <div><span class="stars">${'★'.repeat(u.rarity)}</span> <span class="cname">${n}</span>${o.copies > 1 ? ` <span style="font-size:9px;color:var(--dim)">+${o.copies - 1}</span>` : ''}</div>
-      <div class="tagline"><span class="aff ${d.affinity}">${d.affinity}</span> ${d.role}</div>
+      <div><span class="stars">${'★'.repeat(u.rarity)}</span> <span class="tiername">${M.RARITY_NAMES[u.rarity]}</span> <span class="cname">${n}</span>${o.copies > 1 ? ` <span style="font-size:9px;color:var(--dim)">+${o.copies - 1}</span>` : ''}</div>
+      <div class="epithet">“${lore.epithet || ''}”</div>
+      <div class="tagline"><span class="aff ${d.affinity}">${d.affinity}</span> ${d.role} ${fac ? `<span class="fac" style="color:${fac.color};border-color:${fac.color}">${fac.label}</span>` : ''}</div>
       <div class="statline">HP ${d.hp} · ATK ${d.atk} · DEF ${d.def} · SPD ${d.spd}</div>
       <div class="statline">CRIT ${Math.round(d.critRate * 100)}% · ACC ${d.acc} · RES ${d.res}</div>
+      ${hasKinship ? `<div class="kinship">✦ Kinship Protocol: +${Math.round(M.KINSHIP.atk * 100)}% ATK/DEF in battle</div>` : ''}
+      <details><summary>DOSSIER</summary><p>${lore.bio || ''}</p></details>
       <select data-n="${n}">${opts}</select>
       <button class="sqbtn ${inSquad ? 'in' : ''}" data-n="${n}">${inSquad ? '✓ IN SQUAD' : '+ ADD TO SQUAD'}</button>
     </div>`;
@@ -255,8 +292,11 @@ function renderHangar() {
       : '<span style="font-size:10px;color:var(--dim)">all standard 5★ operatives recruited!</span>') +
     `</div></div>`;
 
+  const kinNote = bonded.length
+    ? ` · <span class="kinship">Kinship active: ${bonded.map((f) => M.FACTIONS[f].label).join(', ')}</span>`
+    : ' · field 2+ operatives of one House for Kinship (+12% ATK/DEF each)';
   $('hangar').innerHTML =
-    `<p style="font-size:11px;color:var(--dim);text-align:center;margin-bottom:8px">Squad ${profile.squad.length}/5 — gear costs ▣1 to equip (refunded on unequip). Speed-tune with Velocity; land debuffs with Targeting.</p>` +
+    `<p style="font-size:11px;color:var(--dim);text-align:center;margin-bottom:8px">Squad ${profile.squad.length}/5 — gear costs ▣1 to equip (refunded on unequip)${kinNote}</p>` +
     `<div class="row">${cards}</div>` + shop;
 
   for (const sel of $('hangar').querySelectorAll('select')) {
@@ -293,7 +333,7 @@ function renderGacha() {
       <button id="p10" ${profile.voidglass >= M.PULL_COST * 10 ? '' : 'disabled'}>PULL ×10 — ⬡${M.PULL_COST * 10}</button>
       <button class="dev" id="devGrant">+⬡1600 (dev/tester)</button>
     </div>
-    <div class="rates">Published rates: 5★ 0.6% (soft pity +6%/pull from 74, hard pity 90) · 4★ 5.1% (min one per 10) · dupes convert to Echo Shards ◆</div>
+    <div class="rates">Published rates: PRIME (5★) 0.6% — soft pity +6%/pull from 74, hard pity 90 · VECTOR (4★) 5.1%, min one per 10 · STRAND (3★) salvage → ◆ · dupes always convert to Echo Shards</div>
   </div>`;
   $('p1').onclick = () => pulls(1);
   $('p10').onclick = () => pulls(10);
@@ -304,11 +344,16 @@ function pulls(n) {
   const results = M.doPulls(profile, n, rng);
   if (!results) return;
   save();
-  $('reveal-grid').innerHTML = results.map((r) => `<div class="pull-card r${r.rarity}">
+  $('reveal-grid').innerHTML = results.map((r) => {
+    const lore = M.LORE[r.name];
+    return `<div class="pull-card r${r.rarity}">
     <div class="pr">${'★'.repeat(r.rarity)}</div>
+    <div class="tiername">${M.RARITY_NAMES[r.rarity]}</div>
     <div class="pn">${r.name}</div>
+    ${lore ? `<div class="epithet">“${lore.epithet}”</div>` : ''}
     ${r.isNew ? '<div class="new">NEW OPERATIVE!</div>' : `<div class="dupe">+◆${r.shards}</div>`}
-  </div>`).join('');
+  </div>`;
+  }).join('');
   show('revealModal');
   renderGacha();
 }
@@ -317,13 +362,66 @@ function pulls(n) {
 
 let bstate = null, currentEnc = null, currentActor = null, pendingSkill = null, auto = false, fast = false;
 
+// ---- story playback ----
+let storyLines = null, storyIdx = 0, storyDone = null;
+
+function speakerColor(who) {
+  if (who === 'NAVIGATOR') return 'var(--gold)';
+  if (who === 'MERIDIAN') return 'var(--accent)';
+  const lore = M.LORE[who];
+  if (lore && M.FACTIONS[lore.faction]) return M.FACTIONS[lore.faction].color;
+  return 'var(--debuff)'; // unknown voices (SABLE-OF-NINE...) read as a threat
+}
+
+function playStory(lines, done) {
+  if (!lines || !lines.length) { done(); return; }
+  storyLines = lines; storyIdx = 0; storyDone = done;
+  renderStoryLine();
+  show('storyModal');
+}
+
+function renderStoryLine() {
+  const l = storyLines[storyIdx];
+  $('storySpeaker').textContent = l.who;
+  $('storySpeaker').style.color = speakerColor(l.who);
+  $('storyText').textContent = l.text;
+  $('storyNext').textContent = storyIdx < storyLines.length - 1 ? '▸ click to continue' : '▸ click to finish';
+}
+
+function advanceStory() {
+  if (++storyIdx < storyLines.length) renderStoryLine();
+  else finishStory();
+}
+
+function finishStory() {
+  hide('storyModal');
+  const done = storyDone;
+  storyLines = null; storyDone = null;
+  if (done) done();
+}
+
+$('storyBox').onclick = advanceStory;
+$('storySkip').onclick = finishStory;
+
+// ---- battle flow ----
+
 function startBattle(encId) {
   currentEnc = M.encounterById(encId);
-  bstate = S.newBattle(undefined, M.squadDefs(profile), currentEnc.foes);
-  currentActor = null; pendingSkill = null;
-  switchScreen('battle');
-  render();
-  loop();
+  const firstTime = !profile.cleared[encId];
+  const begin = () => {
+    bstate = S.newBattle(undefined, M.squadDefs(profile), currentEnc.foes);
+    const bonded = M.kinshipFactions(profile.squad.filter((n) => profile.owned[n]).slice(0, 5));
+    for (const f of bonded) {
+      bstate.log.push({ text: `Kinship Protocol: ${M.FACTIONS[f].label} operatives fight side by side (+12% ATK/DEF)`, cls: 'buff', turn: 0 });
+    }
+    currentActor = null; pendingSkill = null;
+    switchScreen('battle');
+    render();
+    loop();
+  };
+  const story = M.STORY[encId];
+  if (firstTime && story) playStory(story.intro, begin);
+  else begin();
 }
 
 function fxChips(u) {
@@ -429,10 +527,15 @@ function loop() {
   }
 }
 
+let pendingOutro = null;
+
 function endBattle() {
   if (!bstate || !bstate.winner) return;
   render();
   if (bstate.winner === 'hero') {
+    const firstTime = !profile.cleared[currentEnc.id];
+    const story = M.STORY[currentEnc.id];
+    if (firstTime && story) pendingOutro = story.outro;
     const r = M.applyVictory(profile, currentEnc.id);
     save();
     $('endTitle').textContent = 'Victory';
@@ -449,7 +552,10 @@ function endBattle() {
 function closeBattle() {
   hide('endModal');
   bstate = null; currentEnc = null; currentActor = null;
-  switchScreen('missions');
+  const outro = pendingOutro;
+  pendingOutro = null;
+  if (outro) playStory(outro, () => switchScreen('missions'));
+  else switchScreen('missions');
 }
 
 $('autoBtn').onclick = () => {

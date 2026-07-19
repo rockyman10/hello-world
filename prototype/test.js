@@ -118,3 +118,44 @@ function winRate(heroDefs, encId, runs) {
 
   console.log(`Encounters OK — Sweep(starters) ${(100 * w1).toFixed(0)}%, CryoCell starters ${(100 * w2starter).toFixed(0)}% vs countered ${(100 * w2counter).toFixed(0)}%, Warden(5★s) ${(100 * w3).toFixed(0)}%`);
 }
+
+// ---------------------------------------------------------------- lore & factions
+
+{
+  // Every playable unit must have complete lore, and every faction must be real.
+  for (const name of Object.keys(M.UNITS)) {
+    const l = M.LORE[name];
+    if (!l || !l.faction || !l.epithet || !l.bio) throw new Error(`missing lore for ${name}`);
+    if (!M.FACTIONS[l.faction]) throw new Error(`unknown faction '${l.faction}' on ${name}`);
+  }
+  // Every House fields at least 2 units so Kinship is achievable for all of them.
+  const perFaction = {};
+  for (const name of Object.keys(M.UNITS)) {
+    const f = M.LORE[name].faction;
+    perFaction[f] = (perFaction[f] || 0) + 1;
+  }
+  for (const [f, n] of Object.entries(perFaction)) {
+    if (n < 2) throw new Error(`House ${f} has only ${n} unit — Kinship unreachable`);
+  }
+
+  // Kinship Protocol: two Chorus units get boosted, a lone House member does not.
+  const p = M.newProfile(); // starters: Mika (chorus), Dex (rimeholt), Ora (helix)
+  p.owned['Juno-9'] = { copies: 1, gear: null };
+  p.squad = ['Mika Tan', 'Juno-9', 'Dex Volkov'];
+  const defs = M.squadDefs(p);
+  const mika = defs.find((d) => d.name === 'Mika Tan');
+  const dex = defs.find((d) => d.name === 'Dex Volkov');
+  const baseMika = M.UNITS['Mika Tan'].def, baseDex = M.UNITS['Dex Volkov'].def;
+  if (mika.atk !== Math.round(baseMika.atk * 1.12)) throw new Error('kinship bonus not applied to bonded pair');
+  if (dex.atk !== baseDex.atk) throw new Error('kinship bonus wrongly applied to lone House member');
+
+  // Chapter 1 story: every encounter has a non-empty intro and outro.
+  for (const e of M.ENCOUNTERS) {
+    const s = M.STORY[e.id];
+    if (!s || !s.intro.length || !s.outro.length) throw new Error(`missing story for encounter ${e.id}`);
+  }
+  const rarityNames = [3, 4, 5].map((r) => M.RARITY_NAMES[r]);
+  if (rarityNames.some((n) => !n)) throw new Error('rarity tier names incomplete');
+
+  console.log(`Lore OK — ${Object.keys(M.UNITS).length} dossiers, ${Object.keys(perFaction).length} Houses (all Kinship-capable), story beats for all ${M.ENCOUNTERS.length} encounters, tiers: ${rarityNames.join('/')}`);
+}
