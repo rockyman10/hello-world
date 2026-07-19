@@ -9,8 +9,8 @@ The strategy: build a **web-first vertical slice** solo/small-team, prove the lo
 
 1. **Write the one-page design doc** (done — see `GAME_CONCEPT.md`).
 2. **Prototype the gacha math in a spreadsheet** (Google Sheets, free): simulate 10,000 pull sessions, verify pity curve feels right, model F2P income per patch.
-3. **Prototype combat on paper or in a spreadsheet:** 4 units vs. 2 enemies, run the timeline/Charge economy by hand for 10 turns. If it's not interesting in a spreadsheet, no engine will save it.
-4. **Scope ruthlessly for the vertical slice:** 4 playable units, 1 star system, 5 combat encounters, 1 boss, working gacha with placeholder pool. Nothing else.
+3. **Prototype combat on paper or in a spreadsheet:** 5 units vs. 3 enemies, run the turn meter by hand for 10 turns — verify speed differences and turn-meter boosts/drains create interesting ordering decisions, and that a debuff team beats a raw-damage team on the boss. If it's not interesting in a spreadsheet, no engine will save it.
+4. **Scope ruthlessly for the vertical slice:** 5 playable units, 1 star system, 5 combat encounters, 1 boss, working gacha with placeholder pool. Nothing else.
 
 ## Phase 1 — Tools Setup (Week 3, $0)
 
@@ -31,12 +31,14 @@ The strategy: build a **web-first vertical slice** solo/small-team, prove the lo
 
 Build in this order — each step is playable:
 
-1. **Timeline system:** units + enemies on a speed-based turn queue. Gray boxes, debug text. No art.
-2. **Basic attack / Skill / Charge pool:** the shared-resource economy from the design doc.
-3. **Resonance shields + Breach:** enemy shield bar, matching-element damage, stagger window.
-4. **Ultimates** with off-turn interrupt casting.
-5. **4 archetype units** (DPS/tank/support/healer) as data files (JSON or Godot Resources) — *data-driven from day one* so adding unit #5 costs a config file, not code.
-6. **One boss** with a phase change.
+1. **Turn Meter system:** every unit's meter fills by Speed each tick; act at 100%. Gray boxes, debug text, visible meter bars. No art. (This is the whole feel of RAID combat — get the tick rate and meter readability right first.)
+2. **Basic attacks + skills with cooldowns:** per-unit skill definitions with cooldown tracking and simple targeting (single/AoE).
+3. **Buff/debuff engine:** a generic status-effect system — duration in turns, tick-on-turn effects (Corrosion), stat modifiers (Armor Breach, Jam), control (Stasis Lock), and the ACC-vs-RES landing roll. *This is the deepest system in the game; build it generic so every future skill is data, not code.*
+4. **Turn-meter manipulation skills** (boost allies / drain enemies) — the moment combat becomes chess.
+5. **Affinity triangle:** Ion ⟶ Cryo ⟶ Plasma advantage/disadvantage rolls (crit bonus vs. weak-hit/debuff-miss), plus neutral Umbral.
+6. **5 archetype units** (attacker, defender, debuffer, buffer, healer) as data files (JSON or Godot Resources) — *data-driven from day one* so adding unit #6 costs a config file, not code.
+7. **One boss** with a phase change and a debuff-check mechanic (e.g., heals unless Heal Blackout is on it).
+8. **Auto-battle** with a dumb-but-honest skill priority — RAID players expect auto from the first session, and it doubles as your balance-testing harness.
 
 **Milestone gate:** hand the prototype to 3 people. If nobody says "one more fight," iterate here before building anything else.
 

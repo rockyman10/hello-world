@@ -7,7 +7,7 @@
 
 **One-liner:** Humanity's last starship drifts through a dying galaxy, and you — its newly awakened Navigator — must recruit genetically engineered "Voidborn" operatives to reclaim lost star systems from a reality-eating anomaly called the Eclipse.
 
-**Elevator pitch:** *Honkai: Star Rail's* turn-based depth meets *Zenless Zone Zero's* stylish urban-tech aesthetic, wrapped in a *Nikke*-style vertical-friendly presentation, with *Arknights'* strategic base-building as the idle layer. Players collect Voidborn operatives through a gacha system, build synergistic squads around elemental "Resonance" types, and push through a galaxy map of story chapters, roguelite void rifts, and time-limited events.
+**Elevator pitch:** *Raid: Shadow Legends'* turn-meter combat and buff/debuff warfare meets *Zenless Zone Zero's* stylish urban-tech aesthetic, wrapped in a *Nikke*-style vertical-friendly presentation, with *Arknights'* strategic base-building as the idle layer. Players collect Voidborn operatives through a gacha system, build squads around speed tuning, debuff coverage, and affinity matchups, and push through a galaxy map of story chapters, roguelite void rifts, and time-limited events.
 
 **Genre:** Turn-based squad RPG with idle/base-management sublayer
 **Platforms:** Mobile-first (portrait-friendly UI), with browser/PC build
@@ -19,8 +19,9 @@
 
 | Game | What we borrow |
 |---|---|
-| **Honkai: Star Rail** | Turn-based combat with elemental Weakness Break; strong character-driven storytelling; generous free pulls in events |
-| **Genshin Impact** | Elemental reaction system creating team-building depth; 50/50 pity structure that players understand and accept |
+| **Raid: Shadow Legends** | The entire combat core: turn-meter system, per-skill cooldowns, buff/debuff-driven strategy, Accuracy-vs-Resistance, affinity triangle, gear sets and speed tuning |
+| **Honkai: Star Rail** | Strong character-driven storytelling; generous free pulls in events |
+| **Genshin Impact** | 50/50 pity structure that players understand and accept |
 | **Zenless Zone Zero** | Stylish UI/UX, snappy menus, personality-forward character design; short mission structure respectful of session time |
 | **Goddess of Victory: Nikke** | Portrait orientation for one-handed play; character bond/advise system driving attachment |
 | **Arknights** | Base building as idle resource layer; low-rarity units staying relevant via niche utility |
@@ -56,24 +57,31 @@ Engineered post-humans, each built from a **Genome Archive** of pre-Eclipse Eart
 
 ## 4. Core Gameplay Loops
 
-### Loop 1 — Combat (minutes)
-Turn-based 4-unit squad combat on a speed-based timeline (Star Rail model):
-- **Resonance types (elements):** Pulse (kinetic), Ion (electric), Cryo-Flux, Plasma, Umbral (void), Lumen (light). Enemies have Resonance shields; matching types **Breaches** the shield → stagger + bonus damage window.
-- **Skill economy:** Basic attacks generate Charge; Skills spend it (shared team pool — creates rotation decisions).
-- **Ultimates** charge independently and can be fired off-turn (interrupt casts, save allies).
-- **Synergy tags:** Units have faction/genome tags that trigger paired bonuses — encourages collecting across banners without hard-requiring specific units.
+### Loop 1 — Combat (minutes) — RAID: Shadow Legends model
+Turn-based 5-unit squad combat driven by a **Turn Meter**:
+
+- **Turn Meter:** every unit's meter fills continuously at a rate set by its Speed stat; a unit acts when it hits 100%. Speed is the god-stat, and **turn-meter manipulation** (skills that boost allies' meter or drain enemies') is a core strategic axis — whole team comps are built around going first or denying the enemy a turn.
+- **Skills with cooldowns:** each unit has a basic attack (no cooldown) plus 2–3 signature skills on individual cooldowns (3–6 turns). No shared resource pool — the decisions are about sequencing, cooldown alignment, and saving key skills for boss phases. Skill ranks ("Neurolinks," RAID's tomes) reduce cooldowns and add effect chances.
+- **Buff/debuff warfare — the heart of combat.** Fights are won by coverage, not raw damage:
+  - *Debuffs:* Corrosion (poison, % max HP per turn), Armor Breach (Decrease DEF), Jam (Decrease SPD/ATK), Stasis Lock (stun/freeze), Firewall Down (Decrease RES), Heal Blackout (block healing), Provoke, Turn Meter Drain.
+  - *Buffs:* Overshield (shield), Combat Stims (Increase ATK/SPD), Reactive Plating (Increase DEF), Nanite Lifesteal, Counterattack Protocol, Cloak (unkillable/block-debuffs).
+  - **Accuracy vs. Resistance:** every debuff rolls the caster's ACC against the target's RES — gearing debuffers for Accuracy is a build requirement, exactly as in RAID.
+- **Affinity triangle:** three combat affinities — **Ion ⟶ Cryo ⟶ Plasma ⟶ Ion** (advantage: +crit chance and weak-hit immunity; disadvantage: chance to weak-hit and miss debuffs) — plus rare **Umbral (Void-type)** units that sit outside the triangle with no weakness. Umbral units carry rarity prestige, mirroring RAID's coveted Void champions.
+- **Leader Protocol:** the slot-1 unit projects an aura (e.g., +19% team SPD, +33% HP in Rifts) — some units are pulled *for their aura alone*, a proven RAID collection driver.
+- **Multi-battle / auto:** full auto with configurable skill priority, plus sweep for farmed stages — RAID's respect-the-grind convenience from day one.
 
 ### Loop 2 — Progression (session)
-- **Character:** Level → Ascension (farmed materials) → Skill ranks → **Chronoprint** (relic/gear) sets with sub-stats.
-- Anti-frustration vs. market: sub-stat rerolling uses a **pity-token** system so relic grind has a visible finish line (a known pain point in Genshin/HSR).
+- **Character:** Level → Ascension (farmed materials) → Skill ranks (Neurolink tomes) → **Chronoprint** gear in six slots with main stats + sub-stats, organized into **sets** (Speed, Lifesteal, Accuracy, Counterattack, Shield...) granting bonuses at 2 or 4 pieces. Speed-tuning your team's turn order via gear is the endgame optimization layer, exactly as in RAID.
+- Anti-frustration vs. market: sub-stat rolling uses a **pity-token** system so gear grind has a visible finish line (RAID's harshest pain point — we keep the depth, cap the cruelty).
 
 ### Loop 3 — Base / Idle (daily)
 The **Meridian** ship: assign off-squad units to modules (Reactor = currency, Biolab = ascension mats, Archive = character bond XP). Generates offline; collect on login. Keeps the whole roster useful.
 
 ### Loop 4 — Endgame (weekly)
-- **Void Rifts:** roguelite runs with random blessings (Simulated Universe model) — infinitely replayable, free premium currency weekly.
-- **Eclipse Frontier:** rotating 3-week boss gauntlet with buffs that spotlight recent banner units (Memory of Chaos model).
-- **Paradox Hunts:** weekly bosses for signature materials.
+- **Void Rifts:** roguelite runs with random blessings — infinitely replayable, free premium currency weekly.
+- **Eclipse Frontier:** rotating 3-week boss gauntlet with buffs that spotlight recent banner units.
+- **Paradox Hunts:** weekly bosses for signature materials — each demanding a specific debuff package (e.g., a boss that heals unless Heal Blackout is maintained), RAID Clan-Boss-style, so utility units hold long-term value.
+- **The Arena (post-launch):** asynchronous PvP vs. defense teams, RAID-style — speed-lead metas, tiered rankings, weekly rewards. Deferred past the vertical slice but designed-for from the start (it's RAID's biggest gear-chase motivator).
 
 ---
 
@@ -115,7 +123,7 @@ The **Meridian** ship: assign off-squad units to modules (Reactor = currency, Bi
 
 - **6-week patches:** 1 new 5★ + 1 new 4★, one event with story, one QoL feature.
 - **Half-anniversary / anniversary:** free 5★ selector (market has punished stingy anniversaries hard — see the Nikke vs. lesser competitors discourse).
-- **Launch roster:** 12 units (5×5★, 7×4★) across 6 elements and 4 roles (Vanguard/DPS, Aegis/tank, Weaver/support, Mender/healer).
+- **Launch roster:** 12 units (5×5★, 7×4★) across the three affinities + Umbral, and 4 roles (Attack, Defense, Support, Mender) — with debuff coverage (Armor Breach, Corrosion, SPD control, Heal Blackout) spread so every role matters in boss design.
 
 ---
 
@@ -129,14 +137,14 @@ The **Meridian** ship: assign off-squad units to modules (Reactor = currency, Bi
 
 ## 8. Launch Character Concepts (sample)
 
-| Name | Rarity | Element / Role | Hook |
+| Name | Rarity | Affinity / Role | Hook |
 |---|---|---|---|
-| **Kaelis Vantar** | 5★ | Umbral / DPS | Ex-Paradox Lord's enforcer; converts HP to damage, heals on Breach |
-| **Juno-9** | 5★ | Ion / Support | Cassette-punk AI idol; her "broadcasts" buff the team and debuff enemies simultaneously |
-| **Solveig Rask** | 5★ | Cryo-Flux / Sub-DPS | Deep-void salvager; off-turn ultimate that freezes the timeline bar |
-| **Adaeze Okonkwo** | 5★ | Plasma / Mender | Bio-hacker medic; overheal converts to shields |
-| **Renji Kurosawa** | 5★ | Pulse / Vanguard | Frame pilot; taunts and counters, Breach on counter |
-| **Mika Tan** | 4★ | Lumen / Support | Free starter; Charge battery for the team — stays meta forever by design |
+| **Kaelis Vantar** | 5★ | Umbral / Attack | Ex-Paradox Lord's enforcer; converts HP to damage; Void-type — no affinity weakness |
+| **Juno-9** | 5★ | Ion / Support | Cassette-punk AI idol; team-wide Combat Stims + Turn Meter boost; +SPD leader aura (the "speed lead" everyone wants) |
+| **Solveig Rask** | 5★ | Cryo / Attack | Deep-void salvager; drains enemy Turn Meter on crit; A3 skill fully resets her own cooldowns |
+| **Adaeze Okonkwo** | 5★ | Plasma / Mender | Bio-hacker medic; cleanses debuffs and converts overheal to Overshield |
+| **Renji Kurosawa** | 5★ | Cryo / Defense | Frame pilot; Provoke + Counterattack Protocol; +DEF leader aura |
+| **Mika Tan** | 4★ | Ion / Support | Free starter; AoE Armor Breach + Jam debuffer built for Accuracy — stays meta forever by design, like RAID's best rare debuffers |
 
 ---
 
