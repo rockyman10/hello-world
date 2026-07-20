@@ -284,6 +284,16 @@
   }
   #heroRecruit:hover { transform: translateY(-2px); box-shadow: 0 0 40px #ffd75eaa; }
   .hnote { font-size: 10px; color: var(--dim); letter-spacing: 1px; }
+  .heroArrow {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+    background: #0a0e1a99; border: 1px solid #ffffff33; color: #fff; width: 42px; height: 42px;
+    border-radius: 50%; font-size: 24px; cursor: pointer; line-height: 1; transition: background .15s, box-shadow .15s;
+  }
+  .heroArrow:hover { background: #1a2340; box-shadow: 0 0 16px #5ee0ff66; }
+  #heroPrev { left: 14px; } #heroNext { right: 14px; }
+  #heroDots { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 3; }
+  #heroDots .dot { width: 8px; height: 8px; border-radius: 50%; background: #ffffff33; cursor: pointer; transition: background .15s; }
+  #heroDots .dot.on { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
   @media (max-width: 640px) { #heroName .hn { font-size: 30px; letter-spacing: 3px; } #heroStage { height: 560px; } }
 
   /* skill cut-in banner (RAID/HSR ultimate flash) */
@@ -372,22 +382,23 @@
         <canvas id="hero3d"></canvas>
         <div id="heroOverlay">
           <div id="heroTop">
-            <div class="tier5">★★★★★ &nbsp;PRIME</div>
-            <div class="affrow"><span class="aff umbral">UMBRAL</span> <span class="rolechip">ATTACK</span> <span class="housechip">HOUSE VANTAR</span></div>
+            <div class="tier5" id="hsTier">★★★★★ &nbsp;PRIME</div>
+            <div class="affrow"><span class="aff umbral" id="hsAff">UMBRAL</span> <span class="rolechip" id="hsRole">ATTACK</span> <span class="housechip" id="hsHouse">HOUSE VANTAR</span></div>
           </div>
           <div id="heroBottom">
             <div id="heroName">
-              <div class="hn">KAELIS VANTAR</div>
-              <div class="he">“The Unwritten Blade”</div>
+              <div class="hn" id="hsName">KAELIS VANTAR</div>
+              <div class="he" id="hsEpithet">“The Unwritten Blade”</div>
             </div>
-            <div class="hbio">Heir of the Void Compact — the Eclipse rewrote him into an executioner, until your anchor signal cut him loose. He hunts the timeline where a version of him still serves.</div>
-            <div class="hstats">
-              <span>ATK <b>1400</b></span><span>HP <b>14000</b></span><span>SPD <b>105</b></span><span>CRIT <b>30%</b></span>
-            </div>
+            <div class="hbio" id="hsBio"></div>
+            <div class="hstats" id="hsStats"></div>
             <button id="heroRecruit">◈ RECRUIT — ⬡160</button>
-            <div class="hnote">Featured 5★ · Umbral has no affinity weakness</div>
+            <div class="hnote" id="hsNote"></div>
           </div>
         </div>
+        <button class="heroArrow" id="heroPrev">‹</button>
+        <button class="heroArrow" id="heroNext">›</button>
+        <div id="heroDots"></div>
       </div>
     </div>
 
@@ -1336,15 +1347,38 @@ $('fleeBtn').onclick = () => { bstate = null; rift = null; frontier = null; curr
 
 // ------------------------------------------------------------ character showcase
 
-let showcaseReady = false;
-function openShowcase() {
-  if (!Showcase.supported()) {
-    $('heroStage').querySelector('#hero3d').style.display = 'none';
-    return;
-  }
-  if (!showcaseReady) showcaseReady = Showcase.init($('hero3d'));
-  if (showcaseReady) Showcase.start();
+let showcaseReady = false, showcaseIdx = 0;
+
+function paintShowcase(meta) {
+  if (!meta) return;
+  $('hsTier').innerHTML = '★'.repeat(meta.rarity) + ' &nbsp;' + meta.tier;
+  const aff = $('hsAff'); aff.textContent = meta.aff; aff.className = 'aff ' + meta.affClass;
+  $('hsRole').textContent = meta.role;
+  $('hsHouse').textContent = meta.house;
+  $('hsName').textContent = meta.name;
+  $('hsEpithet').textContent = meta.epithet;
+  $('hsBio').textContent = meta.bio;
+  $('hsStats').innerHTML = Object.entries(meta.stats).map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join('');
+  $('hsNote').textContent = meta.note;
+  const keys = Showcase.list();
+  $('heroDots').innerHTML = keys.map((k, i) => `<span class="dot ${i === showcaseIdx ? 'on' : ''}" data-i="${i}"></span>`).join('');
+  for (const d of $('heroDots').querySelectorAll('.dot')) d.onclick = () => selectShowcase(+d.dataset.i);
 }
+
+function selectShowcase(i) {
+  const keys = Showcase.list();
+  showcaseIdx = (i + keys.length) % keys.length;
+  const meta = Showcase.select(keys[showcaseIdx]);
+  paintShowcase(meta);
+}
+
+function openShowcase() {
+  if (!Showcase.supported()) { $('hero3d').style.display = 'none'; paintShowcase(Showcase.meta('kaelis')); return; }
+  if (!showcaseReady) showcaseReady = Showcase.init($('hero3d'));
+  if (showcaseReady) { Showcase.start(); selectShowcase(showcaseIdx); }
+}
+$('heroPrev').onclick = () => selectShowcase(showcaseIdx - 1);
+$('heroNext').onclick = () => selectShowcase(showcaseIdx + 1);
 $('heroRecruit').onclick = () => switchScreen('gacha');
 
 // ------------------------------------------------------------ boot

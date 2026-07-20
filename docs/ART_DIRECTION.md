@@ -64,6 +64,13 @@ The **Showcase** tab is the visual pitch: a full banner-splash presentation of K
 
 What this proves for production: the presentation *frame* (lighting rig, staging, bloom, banner UI, turntable, CTA) is done and reusable for every character. Swapping the procedural body for a **Blender-sculpted, textured model** (the §2 Route-A pipeline) drops into the same rig and lands at true store-page quality — the procedural version is the stand-in that lets the frame ship today. The bar to clear per character is *the model*, not the scene.
 
+**Now multi-character and animated.** The showcase is a data-driven registry (`CHARACTERS` in `showcase.js`) with a ‹ › switcher and dots:
+
+- **Kaelis Vantar** (Umbral/House Vantar) — heavy void-knight: flaring cloak, gold-trimmed armor, crowned helm, floating greatsword. Stage retints **purple**.
+- **Juno-9** (Ion/The Chorus) — a completely different silhouette: slim idol build, white bodysuit with cyan seams, headset + mic boom, twin ponytails, a held microphone, orbiting broadcast rings pulsing to a beat, and a floating cassette. Stage retints **cyan**.
+
+Each carries its own **idle animation**, so the hero feels alive rather than posed: Kaelis breathes, shifts weight, his cloak and arms sway and his blade bobs; Juno bounces to a 2-count beat, her ponytails whip on a delay, her broadcast rings pulse and her mic lifts. The stage's rim light, aura, ground pool, embers, and rune circle all retint to the selected character's affinity — proving the frame generalizes across House identities, not just Kaelis. Adding character #3 is one `build()` function plus a registry entry.
+
 ## 4. UI skin evolution
 
 The current "neon-void deco" palette stays (it's our differentiation vs. RAID's brown-gold grimdark), but adopts RAID's *hierarchy rules*: gold is reserved for rewards, crits, and 5★/PRIME moments; red-pink for threat (titans, the Eclipsed); House colors never used for system chrome. When real character art lands, cards shift art-first: full-bleed portrait, UI as a thin overlay.
