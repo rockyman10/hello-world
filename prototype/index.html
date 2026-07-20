@@ -247,6 +247,45 @@
   .ribchip.foe { border-color: var(--hp-low); }
   .ribchip.hero { border-color: var(--hp); }
 
+  /* character showcase (banner splash) */
+  #heroStage {
+    position: relative; width: 100%; height: 640px; border-radius: 16px; overflow: hidden;
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 30%, #2a1550 0%, transparent 60%),
+      radial-gradient(ellipse 90% 70% at 50% 110%, #4a1a6e33, transparent),
+      linear-gradient(180deg, #0a0716 0%, #05030c 100%);
+    border: 1px solid #3a2a5e;
+  }
+  #hero3d { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #heroOverlay {
+    position: absolute; inset: 0; pointer-events: none;
+    display: flex; flex-direction: column; justify-content: space-between; padding: 22px 26px;
+    background:
+      linear-gradient(180deg, #05030caa 0%, transparent 22%, transparent 60%, #05030cee 100%),
+      radial-gradient(ellipse 60% 80% at 50% 50%, transparent 55%, #05030c88 100%);
+  }
+  #heroTop { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+  #heroTop .tier5 { font-size: 15px; font-weight: 800; letter-spacing: 3px; color: var(--gold); text-shadow: 0 0 16px #ffd75e88; }
+  .affrow { display: flex; gap: 6px; align-items: center; }
+  .rolechip, .housechip { font-size: 9px; font-weight: 700; letter-spacing: 1px; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; }
+  .rolechip { background: #2a3352; color: var(--text); }
+  .housechip { background: transparent; border: 1px solid var(--purple); color: var(--purple); }
+  #heroName { text-align: center; margin-bottom: 4px; }
+  #heroName .hn { font-size: 40px; font-weight: 800; letter-spacing: 6px; color: #fff; text-shadow: 0 2px 20px #b060ff, 0 0 6px #000; }
+  #heroName .he { font-size: 14px; font-style: italic; color: #e2d2ff; letter-spacing: 1px; margin-top: 2px; text-shadow: 0 1px 6px #000; }
+  #heroBottom { display: flex; flex-direction: column; align-items: center; gap: 9px; }
+  .hbio { max-width: 560px; text-align: center; font-size: 12px; line-height: 1.6; color: #b9c2e0; }
+  .hstats { display: flex; gap: 18px; font-size: 12px; color: var(--dim); }
+  .hstats b { color: var(--text); font-size: 14px; }
+  #heroRecruit {
+    pointer-events: auto; background: linear-gradient(180deg, #ffe08a, #ffcf6a); border: 0;
+    color: #2a1d00; font-weight: 800; font-size: 15px; letter-spacing: 2px; padding: 12px 40px;
+    border-radius: 10px; cursor: pointer; box-shadow: 0 0 28px #ffd75e66; transition: transform .1s, box-shadow .2s;
+  }
+  #heroRecruit:hover { transform: translateY(-2px); box-shadow: 0 0 40px #ffd75eaa; }
+  .hnote { font-size: 10px; color: var(--dim); letter-spacing: 1px; }
+  @media (max-width: 640px) { #heroName .hn { font-size: 30px; letter-spacing: 3px; } #heroStage { height: 560px; } }
+
   /* skill cut-in banner (RAID/HSR ultimate flash) */
   #cutin {
     position: fixed; left: 0; right: 0; top: 38%; z-index: 60; pointer-events: none;
@@ -318,6 +357,7 @@
   <div class="wrap">
     <div id="currencies"></div>
     <div id="tabs">
+      <button data-s="showcase">✦ Showcase</button>
       <button data-s="missions" class="on">Missions</button>
       <button data-s="rift">Void Rift</button>
       <button data-s="titans">Titan Hunts</button>
@@ -325,6 +365,30 @@
       <button data-s="vaults">House Vaults</button>
       <button data-s="hangar">Hangar</button>
       <button data-s="gacha">Signal Array</button>
+    </div>
+
+    <div id="showcase" class="screen">
+      <div id="heroStage">
+        <canvas id="hero3d"></canvas>
+        <div id="heroOverlay">
+          <div id="heroTop">
+            <div class="tier5">★★★★★ &nbsp;PRIME</div>
+            <div class="affrow"><span class="aff umbral">UMBRAL</span> <span class="rolechip">ATTACK</span> <span class="housechip">HOUSE VANTAR</span></div>
+          </div>
+          <div id="heroBottom">
+            <div id="heroName">
+              <div class="hn">KAELIS VANTAR</div>
+              <div class="he">“The Unwritten Blade”</div>
+            </div>
+            <div class="hbio">Heir of the Void Compact — the Eclipse rewrote him into an executioner, until your anchor signal cut him loose. He hunts the timeline where a version of him still serves.</div>
+            <div class="hstats">
+              <span>ATK <b>1400</b></span><span>HP <b>14000</b></span><span>SPD <b>105</b></span><span>CRIT <b>30%</b></span>
+            </div>
+            <button id="heroRecruit">◈ RECRUIT — ⬡160</button>
+            <div class="hnote">Featured 5★ · Umbral has no affinity weakness</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="missions" class="screen on"></div>
@@ -392,6 +456,7 @@
 <script src="combat.js"></script>
 <script src="meta.js"></script>
 <script src="battle3d.js"></script>
+<script src="showcase.js"></script>
 <script>
 const S = window.Starfall, M = window.StarfallMeta;
 const $ = (id) => document.getElementById(id);
@@ -423,6 +488,7 @@ function switchScreen(name) {
   for (const s of document.querySelectorAll('.screen')) s.classList.remove('on');
   $(name).classList.add('on');
   $('tabs').style.display = name === 'battle' ? 'none' : 'flex';
+  if (name === 'showcase') openShowcase(); else Showcase.stop();
   if (name === 'missions') renderMissions();
   if (name === 'rift') renderRift();
   if (name === 'frontier') renderFrontier();
@@ -1267,6 +1333,19 @@ $('autoBtn').onclick = () => {
 };
 $('fastBtn').onclick = () => { fast = !fast; $('fastBtn').classList.toggle('on', fast); };
 $('fleeBtn').onclick = () => { bstate = null; rift = null; frontier = null; currentMode = null; currentEnc = null; currentActor = null; hide('endModal'); switchScreen('missions'); };
+
+// ------------------------------------------------------------ character showcase
+
+let showcaseReady = false;
+function openShowcase() {
+  if (!Showcase.supported()) {
+    $('heroStage').querySelector('#hero3d').style.display = 'none';
+    return;
+  }
+  if (!showcaseReady) showcaseReady = Showcase.init($('hero3d'));
+  if (showcaseReady) Showcase.start();
+}
+$('heroRecruit').onclick = () => switchScreen('gacha');
 
 // ------------------------------------------------------------ boot
 

@@ -58,6 +58,12 @@ The three highest-retention visual ingredients from §5's ranking are now live i
 
 These are the pieces that make a session feel alive between the strategic decisions — exactly the "keep players zoned in" layer.
 
+### 3c. The banner showcase — a finished-fidelity hero render (implemented)
+
+The **Showcase** tab is the visual pitch: a full banner-splash presentation of Kaelis Vantar at target fidelity, the quality every character upgrades toward. It's a high-detail procedural build (hundreds of primitives vs. the battle graybox's dozen) — layered flaring cloak with gold hem, gold-trimmed void armor, spiked pauldrons, crowned helm with a glowing visor, a floating void-edge greatsword, orbiting shards, and rising embers — staged on a rune-circle dais with a hero three-point light rig (cool key, purple back-rim, warm fill, top spot), faked bloom via additive glow sprites, a slow turntable, and a gold RECRUIT call-to-action over a name/epithet/rarity/stat plate. This is the "would a player spend on this?" screen, and it renders in-browser with zero external assets.
+
+What this proves for production: the presentation *frame* (lighting rig, staging, bloom, banner UI, turntable, CTA) is done and reusable for every character. Swapping the procedural body for a **Blender-sculpted, textured model** (the §2 Route-A pipeline) drops into the same rig and lands at true store-page quality — the procedural version is the stand-in that lets the frame ship today. The bar to clear per character is *the model*, not the scene.
+
 ## 4. UI skin evolution
 
 The current "neon-void deco" palette stays (it's our differentiation vs. RAID's brown-gold grimdark), but adopts RAID's *hierarchy rules*: gold is reserved for rewards, crits, and 5★/PRIME moments; red-pink for threat (titans, the Eclipsed); House colors never used for system chrome. When real character art lands, cards shift art-first: full-bleed portrait, UI as a thin overlay.
