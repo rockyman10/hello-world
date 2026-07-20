@@ -362,6 +362,143 @@ function riftReward(profile, depthIdx) {
   return r;
 }
 
+// Generic first-clear/repeat reward claim, keyed into profile.cleared.
+function claimReward(profile, key, first, repeat) {
+  const isFirst = !profile.cleared[key];
+  profile.cleared[key] = true;
+  const r = isFirst ? first : repeat;
+  profile.voidglass += r.voidglass || 0;
+  profile.credits += r.credits || 0;
+  profile.caches += r.caches || 0;
+  profile.shards += r.shards || 0;
+  return { first: isFirst, ...r };
+}
+
+// ---------------------------------------------------------------- Archive Titans
+// The Genome Archive stored Earth's myths as dreamt genomes. The Eclipse
+// breached Vault Zero and grew them at starship scale.
+
+const TITANS = [
+  {
+    id: 'vormungand',
+    name: 'VORMUNGAND',
+    title: 'The World-Ender Serpent',
+    desc: 'A serpent grown vast enough to circle a dead star, tail in its own throat. It heals through its coils — sever them first — and below half health it sheds its ruined skin, cleansing every debuff and striking faster.',
+    mech: 'Kill the coils to stop its healing · debuffs are wiped at 50%',
+    firstClear: { voidglass: 3000, caches: 3, credits: 2500 },
+    repeat: { voidglass: 100, credits: 300 },
+    foes: [
+      {
+        name: 'VORMUNGAND', affinity: 'cryo', role: 'Archive Titan', massive: true, enrage: 0.08, packHealPct: 0.05,
+        hp: 95000, atk: 1900, def: 700, spd: 165, critRate: 0.2, critDmg: 1.7, acc: 260, res: 300,
+        phases: [{ below: 0.5, cleanse: true, spdUp: 0.25, gain: [{ type: 'plating', turns: 3 }],
+          log: 'VORMUNGAND SHEDS ITS RUINED SKIN — debuffs wiped, the coils quicken!' }],
+        skills: [
+          { name: 'World Crush', mult: 1.3, target: 'enemy' },
+          { name: 'Ending Coil', cd: 3, mult: 1.2, target: 'allEnemies', effects: [{ type: 'jam', turns: 2, chance: 0.5 }, { type: 'corrosion', turns: 2, chance: 0.5 }] },
+          { name: 'Absolute Zero Breath', cd: 4, mult: 2.2, target: 'enemy', effects: [{ type: 'stasis', turns: 1, chance: 0.6 }] },
+        ],
+      },
+      { name: 'Star-Coil α', affinity: 'cryo', role: 'Coil', hp: 20000, atk: 1000, def: 600, spd: 98, critRate: 0.15, critDmg: 1.5, acc: 180, res: 150,
+        skills: [{ name: 'Constrict', mult: 1.0, target: 'enemy', effects: [{ type: 'jam', turns: 2, chance: 0.4 }] }] },
+      { name: 'Star-Coil β', affinity: 'cryo', role: 'Coil', hp: 20000, atk: 1000, def: 600, spd: 92, critRate: 0.15, critDmg: 1.5, acc: 180, res: 150,
+        skills: [{ name: 'Constrict', mult: 1.0, target: 'enemy', effects: [{ type: 'jam', turns: 2, chance: 0.4 }] }] },
+    ],
+  },
+  {
+    id: 'pyrrhax',
+    name: 'PYRRHAX',
+    title: 'The Carrion Phoenix',
+    desc: 'It nests in supernova remnants and eats the light of dying stars. Kill it and it erupts reborn at 40% health, burning brighter — every titan-slayer\'s first lesson: the first death is punctuation, not an ending.',
+    mech: 'Resurrects once at 40% HP · burns your squad with Corrosion',
+    firstClear: { voidglass: 3000, caches: 3, credits: 2500 },
+    repeat: { voidglass: 100, credits: 300 },
+    foes: [
+      {
+        name: 'PYRRHAX', affinity: 'plasma', role: 'Archive Titan', massive: true, enrage: 0.10, rebirth: true,
+        hp: 76000, atk: 1900, def: 600, spd: 190, critRate: 0.25, critDmg: 1.8, acc: 280, res: 260,
+        phases: [{ below: 0.35, atkUp: 0.3, log: 'PYRRHAX BURNS BRIGHTER — its wings drip stellar fire!' }],
+        skills: [
+          { name: 'Talon Dive', mult: 1.1, target: 'enemy' },
+          { name: 'Immolating Wing', cd: 3, mult: 1.2, target: 'allEnemies', effects: [{ type: 'corrosion', turns: 2, chance: 0.75 }] },
+          { name: 'Solar Scream', cd: 4, mult: 0.9, target: 'allEnemies', tmDrain: 0.25,
+            effects: [{ type: 'corrosion', turns: 2, chance: 0.5 }] },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'maw',
+    name: 'THE MAW OF NINE',
+    title: 'Warbeast of Sable-of-Nine',
+    desc: 'A leviathan with nine gullets, one per timeline its master rules. What it swallows is not eaten — it is unwritten. As it weakens it births its brood into the fight, and its deepest bite blacks out all healing.',
+    mech: 'Summons Spawn at 66% and 33% HP · Swallow the Light blocks healing',
+    firstClear: { voidglass: 3600, caches: 4, credits: 3000 },
+    repeat: { voidglass: 120, credits: 350 },
+    foes: [
+      {
+        name: 'THE MAW OF NINE', affinity: 'umbral', role: 'Archive Titan', massive: true, enrage: 0.10,
+        hp: 100000, atk: 1950, def: 650, spd: 170, critRate: 0.2, critDmg: 1.7, acc: 300, res: 280,
+        phases: [
+          { below: 0.66, log: 'THE MAW SPLITS — its brood pours from the second gullet!',
+            summon: [
+              { name: 'Spawn of the Maw α', affinity: 'umbral', role: 'Brood', hp: 13000, atk: 1500, def: 500, spd: 110, critRate: 0.2, critDmg: 1.6, acc: 200, res: 120,
+                skills: [{ name: 'Void Nip', mult: 1.0, target: 'enemy' }] },
+              { name: 'Spawn of the Maw β', affinity: 'umbral', role: 'Brood', hp: 13000, atk: 1500, def: 500, spd: 104, critRate: 0.2, critDmg: 1.6, acc: 200, res: 120,
+                skills: [{ name: 'Void Nip', mult: 1.0, target: 'enemy' }] },
+            ] },
+          { below: 0.33, atkUp: 0.25, log: 'THE MAW OPENS ITS NINTH GULLET — the light bends toward it!',
+            summon: [
+              { name: 'Spawn of the Maw γ', affinity: 'umbral', role: 'Brood', hp: 13000, atk: 1500, def: 500, spd: 107, critRate: 0.2, critDmg: 1.6, acc: 200, res: 120,
+                skills: [{ name: 'Void Nip', mult: 1.0, target: 'enemy' }] },
+            ] },
+        ],
+        skills: [
+          { name: 'Abyssal Bite', mult: 1.3, target: 'enemy' },
+          { name: 'Ninefold Grasp', cd: 3, mult: 1.1, target: 'allEnemies', tmDrain: 0.25, effects: [{ type: 'corrosion', turns: 2, chance: 0.4 }] },
+          { name: 'Swallow the Light', cd: 4, mult: 2.4, target: 'enemy', effects: [{ type: 'healBlackout', turns: 2, chance: 0.85 }] },
+        ],
+      },
+    ],
+  },
+];
+
+function titanById(id) { return TITANS.find((t) => t.id === id); }
+
+// ---------------------------------------------------------------- House Vaults
+// Faction-gated weekly dungeons: only that House's operatives may enter.
+
+const VAULT_REWARD_FIRST = { caches: 2, shards: 60, credits: 1500 };
+const VAULT_REWARD_REPEAT = { credits: 300, shards: 10 };
+
+function vaultFoes() {
+  const sweep = encounterById('sweep').foes;
+  const cryo = encounterById('cryocell').foes;
+  const warden = encounterById('warden').foes;
+  return [
+    scaleDef(sweep[0], 2.2),
+    scaleDef(sweep[2], 2.2),
+    scaleDef(cryo[0], 1.15),
+    scaleDef(warden[1], 1.2),
+  ];
+}
+
+function vaultRoster(profile, factionKey) {
+  return Object.keys(profile.owned).filter((n) => LORE[n] && LORE[n].faction === factionKey);
+}
+
+function vaultSquadDefs(profile, factionKey) {
+  const names = vaultRoster(profile, factionKey).slice(0, 5);
+  const bonded = names.length >= KINSHIP.minCount;
+  return names.map((n) => {
+    let d = withGear(withLevel(UNITS[n].def, profile.owned[n].level), profile.owned[n].gear);
+    if (bonded) {
+      d = { ...d, atk: Math.round(d.atk * (1 + KINSHIP.atk)), def: Math.round(d.def * (1 + KINSHIP.def)) };
+    }
+    return d;
+  });
+}
+
 function kinshipFactions(names) {
   const counts = {};
   for (const n of names) {
@@ -489,6 +626,8 @@ return {
   LEVEL_CAP, withLevel, levelUpCost, levelUp,
   REACTOR, reactorRate, reactorPending, collectReactor,
   RIFT, scaleDef, riftFoes, applyBlessings, pickBlessings, riftReward,
+  claimReward, TITANS, titanById,
+  VAULT_REWARD_FIRST, VAULT_REWARD_REPEAT, vaultFoes, vaultRoster, vaultSquadDefs,
   newProfile, migrateProfile, squadDefs, withGear, kinshipFactions,
   fiveStarChance, pullOne, doPulls, shardBuy, equipGear, applyVictory,
 };

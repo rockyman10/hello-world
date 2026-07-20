@@ -80,6 +80,8 @@ Turn-based 5-unit squad combat driven by a **Turn Meter**:
 The **Meridian** ship: assign off-squad units to modules (Reactor = currency, Biolab = ascension mats, Archive = character bond XP). Generates offline; collect on login. Keeps the whole roster useful.
 
 ### Loop 4 — Endgame (weekly)
+- **Titan Hunts:** raid-tier battles against the **Archive Titans** — giant mythical creatures grown from humanity's stored myths at starship scale (see `LORE.md` §5). Multi-phase fights with signature mechanics: coil-healing serpents that shed debuffs, a phoenix that resurrects mid-fight, a leviathan that births brood as it weakens. Huge first-slay jackpots, small repeat bounties.
+- **House Vaults:** faction-gated dungeons — only one House's operatives may enter, making collection depth matter (the RAID Faction Wars driver).
 - **Void Rifts:** roguelite runs with random blessings — infinitely replayable, free premium currency weekly.
 - **Eclipse Frontier:** rotating 3-week boss gauntlet with buffs that spotlight recent banner units.
 - **Paradox Hunts:** weekly bosses for signature materials — each demanding a specific debuff package (e.g., a boss that heals unless Heal Blackout is maintained), RAID Clan-Boss-style, so utility units hold long-term value.

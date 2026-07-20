@@ -93,7 +93,21 @@ A decommissioned breach-frame that refused to power down and walked to the Frame
 
 ---
 
-## 5. Chapter 1 Storyline — "The Meridian Wakes" (in the prototype)
+## 5. The Archive Titans (raid bosses — in the prototype)
+
+The Genome Archive did not only store people. Deck-cultures fed it their myths — dreamt genomes, sealed in **Vault Zero**, never meant to be grown. When the Eclipse breached Vault Zero, it found humanity's monsters and grew them at starship scale. Titans are the game's raid tier: massive multi-phase bosses with signature mechanics that hard-check squad building, huge first-slay jackpots, small repeat bounties.
+
+**VORMUNGAND, the World-Ender Serpent** *(Cryo)* — grown vast enough to circle a dead star, tail in its own throat. It heals through its Star-Coils (kill them first), and below half health it **sheds its ruined skin** — wiping every debuff and striking faster. Rimeholt's first written law: *do not salvage the skin.*
+
+**PYRRHAX, the Carrion Phoenix** *(Plasma)* — nests in supernova remnants and eats the light of dying stars. Kill it and it **erupts reborn at 40% health, burning brighter**. Every titan-slayer's first lesson: the first death is punctuation, not an ending. Its wings drip Corrosion onto the whole squad.
+
+**THE MAW OF NINE** *(Umbral)* — Sable-of-Nine's warbeast, a leviathan with nine gullets, one per timeline its master rules. What it swallows is not eaten; it is **unwritten**. It births its brood into the fight at 66% and 33% health, and its deepest bite blacks out all healing. Slaying it is Chapter 4's declaration of war.
+
+Design intent: titans are *fast* (a mountain moving — their turn meter fills half again as quickly as any operative's) and pressure through percentage-based Corrosion, so no defense stat lets you simply outlast them. Bring damage, Heal Blackout, and an answer to the mechanic — attrition is not a strategy.
+
+---
+
+## 6. Chapter 1 Storyline — "The Meridian Wakes" (in the prototype)
 
 **Beat 1 — Perimeter Sweep.** The Navigator wakes from anchor-sleep to alarms: Eclipsed patrol drones on the hull. Mika, Dex, and Ora hold the line while the Navigator learns to anchor. In the drone wreckage: a Rimeholt distress beacon that shouldn't exist — its clan was logged lost thirty years ago.
 

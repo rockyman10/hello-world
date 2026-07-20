@@ -72,6 +72,11 @@ function makeUnit(def, side, idx) {
     passive: def.passive || null,
     enrage: def.enrage || 0,
     enrageStacks: 0,
+    massive: !!def.massive,
+    rebirth: !!def.rebirth,
+    rebirthUsed: false,
+    packHealPct: def.packHealPct || 0,
+    phases: (def.phases || []).map((p) => ({ ...p, done: false })),
     effects: [], // { type, turns }
     meter: 0,
     alive: true,
@@ -130,10 +135,37 @@ function heal(state, source, target, pctOfMax) {
 }
 
 function kill(state, unit) {
+  if (unit.rebirth && !unit.rebirthUsed) {
+    unit.rebirthUsed = true;
+    unit.hp = Math.round(unit.maxHp * 0.4);
+    unit.effects = [];
+    log(state, `${unit.name} collapses into ash... and ERUPTS REBORN in starfire!`, 'kill');
+    return;
+  }
   unit.alive = false;
   unit.effects = [];
   unit.meter = 0;
   log(state, `${unit.name} is destroyed!`, 'kill');
+}
+
+// Titan phase transitions: checked at the titan's own turn start.
+function checkPhases(state, unit) {
+  for (const p of unit.phases) {
+    if (p.done || unit.hp / unit.maxHp > p.below) continue;
+    p.done = true;
+    if (p.log) log(state, p.log, 'kill');
+    if (p.cleanse) unit.effects = unit.effects.filter((e) => EFFECTS[e.type].kind !== 'debuff');
+    for (const g of p.gain || []) unit.effects.push({ type: g.type, turns: g.turns });
+    if (p.spdUp) unit.base.spd = Math.round(unit.base.spd * (1 + p.spdUp));
+    if (p.atkUp) unit.base.atk = Math.round(unit.base.atk * (1 + p.atkUp));
+    for (const sdef of p.summon || []) {
+      const idx = state.units.filter((u) => u.side === unit.side).length;
+      const su = makeUnit(sdef, unit.side, idx);
+      su.meter = 300;
+      state.units.push(su);
+      log(state, `${su.name} emerges from ${unit.name}!`, 'debuff');
+    }
+  }
 }
 
 // ---------------------------------------------------------------- effects
@@ -210,10 +242,21 @@ function executeTurn(state, actor, skillIdx, target) {
   // Start of turn: cooldowns tick, passives, corrosion, stun check.
   actor.cooldowns = actor.cooldowns.map((c) => Math.max(0, c - 1));
 
+  checkPhases(state, actor);
+
   if (actor.enrage) {
     actor.enrageStacks++;
     if (actor.enrageStacks % 5 === 0) {
       log(state, `${actor.name} grows more unstable... (+${Math.round(actor.enrage * actor.enrageStacks * 100)}% ATK)`, 'debuff');
+    }
+  }
+
+  if (actor.packHealPct && !hasEffect(actor, 'healBlackout')) {
+    const others = livingAllies(state, actor).filter((u) => u !== actor).length;
+    if (others > 0 && actor.hp < actor.maxHp) {
+      const amt = Math.round(actor.maxHp * actor.packHealPct * others);
+      actor.hp = Math.min(actor.maxHp, actor.hp + amt);
+      log(state, `${actor.name} draws ${amt} vitality from its coils (${others} remaining)`, 'heal');
     }
   }
 

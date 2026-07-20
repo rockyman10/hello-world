@@ -217,3 +217,69 @@ function winRate(heroDefs, encId, runs) {
 
   console.log(`Systems OK — leveling (cap ${M.LEVEL_CAP}, +2%/lvl), reactor (¢${rate}/h, 24h cap), rift (blessings stack, shallows win ${wins}% for leveled 5★s), migration intact`);
 }
+
+// ---------------------------------------------------------------- titans & vaults
+
+{
+  // A developed endgame squad: level 25 5★s with sensible gear.
+  const gearFor = (d) => d.role === 'Attack' ? 'assault' : d.role === 'Mender' ? 'velocity' : d.role === 'Support' ? 'targeting' : 'aegis';
+  const endgame = S.HEROES.map((d) => M.withGear(M.withLevel(d, 25), gearFor(d)));
+
+  function titanRun(titanId, runs) {
+    const t = M.titanById(titanId);
+    let wins = 0, mechanics = { reborn: false, shed: false, summoned: false, coilHeal: false };
+    for (let seed = 1; seed <= runs; seed++) {
+      const st = S.newBattle(seed, endgame, t.foes);
+      let turns = 0;
+      while (!st.winner) { S.stepAuto(st); if (++turns > 600) throw new Error(`${titanId} seed ${seed}: no termination`); }
+      if (st.winner === 'hero') wins++;
+      const text = st.log.map((l) => l.text).join('\n');
+      mechanics.reborn ||= text.includes('REBORN');
+      mechanics.shed ||= text.includes('SHEDS ITS RUINED SKIN');
+      mechanics.summoned ||= text.includes('emerges from');
+      mechanics.coilHeal ||= text.includes('vitality from its coils');
+    }
+    return { winRate: wins / runs, mechanics };
+  }
+
+  const vor = titanRun('vormungand', 100);
+  const pyr = titanRun('pyrrhax', 100);
+  const maw = titanRun('maw', 100);
+  if (!vor.mechanics.shed) throw new Error('Vormungand never shed its skin');
+  if (!vor.mechanics.coilHeal) throw new Error('Vormungand never coil-healed');
+  if (!pyr.mechanics.reborn) throw new Error('Pyrrhax never resurrected');
+  if (!maw.mechanics.summoned) throw new Error('The Maw never summoned brood');
+  for (const [id, r] of [['vormungand', vor], ['pyrrhax', pyr], ['maw', maw]]) {
+    if (r.winRate < 0.25 || r.winRate > 0.95) throw new Error(`${id} out of tuning band on auto: ${r.winRate}`);
+  }
+
+  // Rebirth restores 40% exactly once.
+  {
+    const st = S.newBattle(5, endgame, M.titanById('pyrrhax').foes);
+    let turns = 0;
+    while (!st.winner) { S.stepAuto(st); if (++turns > 600) break; }
+    const reborns = st.log.filter((l) => l.text.includes('REBORN')).length;
+    if (reborns > 1) throw new Error('Pyrrhax reborn more than once');
+  }
+
+  // Vaults: roster filtering, kinship, and reward claims.
+  const p = M.newProfile(); // Mika (chorus), Dex (rimeholt), Ora (helix)
+  p.owned['Juno-9'] = { copies: 1, gear: null, level: 1 };
+  if (M.vaultRoster(p, 'chorus').sort().join() !== 'Juno-9,Mika Tan') throw new Error('vault roster filter wrong');
+  if (M.vaultRoster(p, 'frameguard').length !== 0) throw new Error('vault roster leaked units');
+  const vd = M.vaultSquadDefs(p, 'chorus');
+  if (vd.length !== 2 || vd.find((d) => d.name === 'Mika Tan').atk !== Math.round(M.UNITS['Mika Tan'].def.atk * 1.12)) {
+    throw new Error('vault kinship not applied to full-House squad');
+  }
+  const solo = M.vaultSquadDefs(p, 'helix');
+  if (solo[0].atk !== M.UNITS['Ora Chen'].def.atk) throw new Error('vault kinship wrongly applied to solo');
+  if (M.vaultFoes().length !== 4) throw new Error('vault foes malformed');
+
+  const before = { vg: p.voidglass, sh: p.shards };
+  const r1 = M.claimReward(p, 'vault:chorus', M.VAULT_REWARD_FIRST, M.VAULT_REWARD_REPEAT);
+  const r2 = M.claimReward(p, 'vault:chorus', M.VAULT_REWARD_FIRST, M.VAULT_REWARD_REPEAT);
+  if (!r1.first || r2.first) throw new Error('claimReward first/repeat wrong');
+  if (p.shards !== before.sh + 60 + 10) throw new Error('claimReward payout wrong');
+
+  console.log(`Titans OK — auto win rates for lvl25 geared 5★s: Vormungand ${(100 * vor.winRate).toFixed(0)}%, Pyrrhax ${(100 * pyr.winRate).toFixed(0)}%, Maw ${(100 * maw.winRate).toFixed(0)}% — all signature mechanics fired. Vaults OK.`);
+}
