@@ -49,7 +49,28 @@ Design note: the FX layer is decoupled — the engine knows nothing about DOM; t
 
 The current "neon-void deco" palette stays (it's our differentiation vs. RAID's brown-gold grimdark), but adopts RAID's *hierarchy rules*: gold is reserved for rewards, crits, and 5★/PRIME moments; red-pink for threat (titans, the Eclipsed); House colors never used for system chrome. When real character art lands, cards shift art-first: full-bleed portrait, UI as a thin overlay.
 
-## 5. Sequencing
+## 5. Going Full 3D Like RAID — Yes, and Here's the Framework
+
+**A real-time 3D battle view now exists in the prototype** — press **3D** in any battle. It's a WebGL diorama (vendored Three.js, still zero-install, works offline): graybox "voidframe" figures and colossal titans staged on a starfield arena with the §2 two-light formula, live-synced to the battle engine — turn-meter positions, active-unit step-forward, HP rings, hit/heal/death/rebirth particle bursts from the same event stream that drives the 2D juice. The 2D cards remain the control surface below, exactly like RAID's unit frames under its 3D stage.
+
+**What "graphics that make top games fun" actually consists of** (in order of player impact per dollar):
+1. **Animation & game-feel** — snap, impact frames, hit-stop, cast flourishes (ZZZ's real secret)
+2. **Celebration moments** — pull cinematics, ultimate cut-ins, victory poses (HSR's real secret)
+3. **Character art quality** — faces and silhouettes players want to screenshot
+4. **Scene staging** — lighting, scale contrast (titan vs. squad), camera drama
+5. **Raw fidelity** — polygon counts and PBR materials — *genuinely last*; Arknights and FGO out-earn most 3D games with 2D
+
+**The three production tiers:**
+
+| Tier | What it is | Cost per character | Who does it |
+|---|---|---|---|
+| **A — Full real-time 3D** | Modeled, rigged, animated characters (RAID/HSR/ZZZ) | Highest — model + rig + ~20 animations each; 5–10× Tier B | Needs a 3D animator; only choose if combat animation IS the product |
+| **B — 3D-staged hybrid** | Real-time 3D arena/staging + rendered or 2D characters | Middle — the arena is built once; characters stay cheap | **Recommended.** The prototype's 3D view is exactly this tier's skeleton |
+| **C — 2D + juice** | Cards/portraits + the §3 presentation layer | Lowest | Already fully built; always the fallback |
+
+**Recommended path:** stay Tier B. Keep the 3D arena, upgrade it incrementally — replace graybox figures with low-poly stylized models (Blender, CC0 kitbash) one banner character at a time, add attack lunges and camera punch-ins on ultimates. In Godot this same architecture carries over (the engine's event stream is renderer-agnostic). Jump to Tier A only if a 3D animator joins and playtests say combat spectacle — not collection, story, or squad-building — is why people stay.
+
+## 6. Sequencing
 
 1. **Now (done):** juice + emblems + ribbon + boss staging — the game already *feels* RAID-like in motion.
 2. **Vertical-slice art pass:** 5 Prime portraits via Route A; drop into emblem/card slots.

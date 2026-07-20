@@ -247,6 +247,15 @@
   .ribchip.foe { border-color: var(--hp-low); }
   .ribchip.hero { border-color: var(--hp); }
 
+  /* 3D arena */
+  #arena3d {
+    display: none; width: 100%; height: 340px; border-radius: 14px;
+    border: 1px solid var(--line); margin-bottom: 10px;
+    background: radial-gradient(ellipse at 50% 30%, #10173a 0%, #070a14 70%);
+  }
+  body.view3d #arena3d { display: block; }
+  body.view3d #battlefield .card { opacity: .92; }
+
   /* frontier */
   .modcard { background: linear-gradient(135deg, #301a10 0%, var(--panel) 60%); border: 1px solid var(--gold); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
   .modcard h3 { color: var(--gold); font-size: 15px; letter-spacing: 2px; }
@@ -277,6 +286,7 @@
 
     <div id="battle" class="screen">
       <div id="turnRibbon"></div>
+      <canvas id="arena3d"></canvas>
       <div id="battlefield">
         <div class="row" id="foeRow"></div>
         <div class="row" id="heroRow"></div>
@@ -285,6 +295,7 @@
       <div id="hud">
         <div id="skills"></div>
         <div class="ctl">
+          <button id="threeBtn">3D</button>
           <button id="autoBtn">AUTO</button>
           <button id="fastBtn">2×</button>
           <button id="fleeBtn">RETREAT</button>
@@ -319,8 +330,10 @@
     <button id="storySkip">SKIP</button>
   </div>
 
+<script src="lib/three.min.js"></script>
 <script src="combat.js"></script>
 <script src="meta.js"></script>
+<script src="battle3d.js"></script>
 <script>
 const S = window.Starfall, M = window.StarfallMeta;
 const $ = (id) => document.getElementById(id);
@@ -795,6 +808,7 @@ function processEvents() {
   if (eventCursor > bstate.events.length) eventCursor = 0; // new battle started
   const fresh = bstate.events.slice(eventCursor);
   eventCursor = bstate.events.length;
+  if (view3d && fresh.length) Battle3D.events(fresh);
   for (const e of fresh) {
     const rect = cardRect(e.target || e.unit);
     if (!rect) continue;
@@ -881,6 +895,7 @@ function render() {
   renderSkills();
   renderLog();
   processEvents();
+  if (view3d) Battle3D.sync(bstate, currentActor && currentActor.id);
 }
 
 function renderSkills() {
@@ -1068,6 +1083,27 @@ function closeBattle() {
   if (outro) playStory(outro, () => switchScreen('missions'));
   else switchScreen('missions');
 }
+
+let view3d = false;
+$('threeBtn').onclick = () => {
+  if (!view3d) {
+    if (!Battle3D.supported() || !Battle3D.init($('arena3d'))) {
+      $('threeBtn').textContent = '3D N/A';
+      return;
+    }
+    view3d = true;
+    document.body.classList.add('view3d');
+    $('threeBtn').classList.add('on');
+    Battle3D.clear();
+    if (bstate) Battle3D.sync(bstate, currentActor && currentActor.id);
+    Battle3D.start();
+  } else {
+    view3d = false;
+    document.body.classList.remove('view3d');
+    $('threeBtn').classList.remove('on');
+    Battle3D.stop();
+  }
+};
 
 $('autoBtn').onclick = () => {
   auto = !auto;
