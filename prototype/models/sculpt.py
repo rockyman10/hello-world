@@ -115,11 +115,11 @@ def export(name):
 # ---------------------------------------------------------------- Kaelis Vantar
 def build_kaelis():
     reset()
-    dark = mat('k_suit', (0.05, 0.04, 0.08), 0.6, 0.45)
-    plate = mat('k_plate', (0.14, 0.11, 0.22), 0.9, 0.28)
-    gold = mat('k_gold', (1.0, 0.78, 0.32), 1.0, 0.22, emit=(0.25, 0.15, 0.0), emit_str=0.4)
-    void = mat('k_void', (0.75, 0.5, 0.99), 0.2, 0.3, emit=(0.66, 0.35, 1.0), emit_str=3.0)
-    cloakm = mat('k_cloak', (0.045, 0.035, 0.08), 0.2, 0.85)
+    dark = mat('k_suit', (0.11, 0.10, 0.17), 0.55, 0.5)          # under-suit, readable
+    plate = mat('k_plate', (0.26, 0.24, 0.38), 0.92, 0.26)        # steel-violet armor
+    gold = mat('k_gold', (1.0, 0.8, 0.34), 1.0, 0.2, emit=(0.4, 0.24, 0.0), emit_str=0.7)
+    void = mat('k_void', (0.78, 0.55, 1.0), 0.2, 0.28, emit=(0.7, 0.38, 1.0), emit_str=3.2)
+    cloakm = mat('k_cloak', (0.07, 0.055, 0.12), 0.25, 0.8)
 
     # organic knight body (Z up)
     J = [
@@ -143,9 +143,13 @@ def build_kaelis():
     ]
     E = [(0,1),(1,2),(2,3),(3,4),(2,5),(5,6),(6,7),(2,8),(8,9),(9,10),
          (0,11),(11,12),(12,13),(0,14),(14,15),(15,16)]
-    R = [0.22,0.20,0.24,0.10,0.16, 0.14,0.09,0.10, 0.14,0.09,0.10,
-         0.13,0.10,0.10, 0.13,0.10,0.10]
+    R = [0.19,0.17,0.21,0.09,0.15, 0.12,0.08,0.09, 0.12,0.08,0.09,
+         0.12,0.09,0.09, 0.12,0.09,0.09]
     skin_body('kaelis_body', J, E, R, dark, subsurf=2)
+    # emissive trim accents (panel-line detail) on forearms & shins
+    for s in (-1, 1):
+        prim('cube', void, loc=(0.56*s, 0.09, 1.3), rot=(0, 0, 0.1), scale=(0.015, 0.015, 0.12))
+        prim('cube', void, loc=(0.19*s, 0.06, 0.62), scale=(0.015, 0.015, 0.14))
 
     # chest & shoulder plating
     ch = prim('ico', plate, loc=(0, 0.08, 1.8), scale=(0.32, 0.24, 0.34), sub=2)
@@ -164,9 +168,10 @@ def build_kaelis():
         prim('cube', plate, loc=(0.53*s, 0.05, 1.12), scale=(0.09, 0.09, 0.1))
         prim('cube', plate, loc=(0.19*s, 0.12, 0.05), scale=(0.1, 0.14, 0.07))
 
-    # crowned helm over the head
-    prim('uv', plate, loc=(0, 0.0, 2.3), scale=(0.2, 0.2, 0.22))
-    prim('cube', void, loc=(0, 0.19, 2.3), scale=(0.14, 0.02, 0.03))          # visor
+    # crowned helm over the head (sleeker)
+    prim('uv', plate, loc=(0, 0.0, 2.31), scale=(0.18, 0.18, 0.21))
+    prim('uv', dark, loc=(0, 0.1, 2.28), scale=(0.16, 0.14, 0.16))            # faceplate underlay
+    prim('cube', void, loc=(0, 0.17, 2.31), scale=(0.13, 0.018, 0.028))       # visor
     for i in range(5):
         a = (i/4 - 0.5) * 1.4
         prim('cone', gold if i % 2 else void,

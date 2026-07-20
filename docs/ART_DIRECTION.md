@@ -100,6 +100,34 @@ The current "neon-void deco" palette stays (it's our differentiation vs. RAID's 
 
 **Recommended path:** stay Tier B. Keep the 3D arena, upgrade it incrementally — replace graybox figures with low-poly stylized models (Blender, CC0 kitbash) one banner character at a time, add attack lunges and camera punch-ins on ultimates. In Godot this same architecture carries over (the engine's event stream is renderer-agnostic). Jump to Tier A only if a 3D animator joins and playtests say combat spectacle — not collection, story, or squad-building — is why people stay.
 
+## 5d. Distance to RAID-level quality — an honest step count
+
+The prototype's showcase now renders real Blender-sculpted glTF models with filmic tone mapping and bloom (see `sculpt.py`; showcase post-processing). That is a genuine, stylized *game character* — but it is **not** RAID-final fidelity, and it's worth being precise about the gap.
+
+**What's already done (the technical pipeline — ~90% of the engineering):**
+- Modeling → glTF → in-browser load, auto-fit, and display ✔
+- Hero light rig (three-point + affinity rim) ✔
+- Filmic (ACES) tone mapping + real bloom on emissive ✔
+- Banner presentation, turntable, character switcher ✔
+- Idle animation hooks + battle integration + pull cinematics ✔
+
+**What remains to reach RAID-level for ONE character — 6 production steps, in order:**
+
+| # | Step | Tool (free) | Who / effort |
+|---|---|---|---|
+| 1 | **High-poly sculpt** — real anatomy, cloth folds, hard-surface armor detail | Blender sculpt mode | Skilled 3D artist · days |
+| 2 | **Retopology** — clean animation-ready mesh (~25–50k tris) | Blender | Artist · hours–1 day |
+| 3 | **UV unwrap + bake** — normal/AO/curvature maps from the high-poly | Blender | Artist · hours |
+| 4 | **PBR texturing** — albedo/normal/roughness/metallic/emissive (2–4K). *This is the single biggest visual jump left — it's what makes a surface read as leather, brushed steel, skin* | Material Maker / ArmorPaint / Blender paint (free); Substance Painter (paid) | Artist · days |
+| 5 | **Rig + skin** — skeleton, weight paint | Blender (Rigify) | Artist · hours–1 day |
+| 6 | **Animation set** — idle, cast, ultimate, hit, death (5–10 clips), exported in the glTF | Blender | Animator · days |
+
+**The honest bottleneck:** steps 1 and 4 (sculpt + texture) are skilled-artist labor and cannot be faked to AAA fidelity by procedural scripting or by me — solid-colour materials and skin-modifier bodies are the ceiling of the automated route. Everything *around* the art is built and waiting.
+
+**Realistic timeline:** a competent solo 3D character artist takes ~**2–4 weeks** to take one character from concept to a rigged, textured, animated RAID-quality asset; a small studio parallelizes across characters. Budget option: commission one hero character (~$800–3,000 for a game-ready textured+rigged model) to prove the final bar, then batch the roster. The engine will accept it with **zero code changes** — the glTF load path already works; it just needs to be handed a better mesh with textures and animations.
+
+**What I can still push without an artist (closer, not final):** procedural PBR textures (noise/gradient node bakes for panel wear and metal grain), a Rigify skeleton with a hand-keyed idle/attack exported in the glTF, and higher sculpt density. These narrow the gap materially but stop short of hand-crafted character art.
+
 ## 6. Sequencing
 
 1. **Now (done):** juice + emblems + ribbon + boss staging — the game already *feels* RAID-like in motion.

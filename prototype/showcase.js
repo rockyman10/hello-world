@@ -7,6 +7,7 @@
  */
 window.Showcase = (function () {
   let renderer, scene, camera, canvas, hero, running = false, t = 0, current = null;
+  let composer = null, bloomPass = null; // production post-processing
   // Retintable stage pieces (recoloured per character affinity).
   let rimLight, auraSprite, poolSprite, embers, rune1, rune2, tickMats = [];
   const glbCache = {}; // key -> normalized THREE.Object3D (sculpted Blender model)
@@ -357,6 +358,12 @@ window.Showcase = (function () {
     catch (e) { return false; }
     renderer.setPixelRatio(Math.min(1.75, window.devicePixelRatio || 1));
     if ('outputEncoding' in renderer) renderer.outputEncoding = THREE.sRGBEncoding;
+    // Filmic tone mapping — the single biggest "looks like a real game" upgrade,
+    // giving highlights rolloff and rich blacks instead of flat sRGB.
+    if ('toneMapping' in renderer && THREE.ACESFilmicToneMapping !== undefined) {
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+    }
 
     scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x0a0716, 0.03);
@@ -390,6 +397,16 @@ window.Showcase = (function () {
     sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
     scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0x8899cc, size: 0.15 })));
 
+    // Real bloom on emissive parts (void cores, visors, sword edge, runes) —
+    // makes glow read as light, not paint. Falls back to plain render if absent.
+    if (typeof THREE.EffectComposer !== 'undefined' && typeof THREE.UnrealBloomPass !== 'undefined') {
+      composer = new THREE.EffectComposer(renderer);
+      composer.addPass(new THREE.RenderPass(scene, camera));
+      const w = canvas.clientWidth || 800, h = canvas.clientHeight || 600;
+      bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(w, h), 0.72, 0.55, 0.82);
+      composer.addPass(bloomPass);
+    }
+
     loadEmbeddedModels();
     select('kaelis');
     return true;
@@ -400,7 +417,10 @@ window.Showcase = (function () {
     requestAnimationFrame(animate);
     t += 0.01;
     const w = canvas.clientWidth, h = canvas.clientHeight;
-    if (canvas.width !== w || canvas.height !== h) { renderer.setSize(w, h, false); camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix(); }
+    if (canvas.width !== w || canvas.height !== h) {
+      renderer.setSize(w, h, false); camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix();
+      if (composer) composer.setSize(w, h);
+    }
 
     hero.rotation.y = Math.sin(t * 0.35) * 0.5;
     camera.position.set(0, 2.7, 8.2); camera.lookAt(0, 1.95, 0);
@@ -413,7 +433,7 @@ window.Showcase = (function () {
     }
     for (const p of (hero.userData.pulse || [])) { const s = 1 + Math.sin(t * 3) * 0.12; if (p.children[0]) p.children[0].scale.setScalar((p === hero.userData.pulse[0] ? 1.05 : 0.75) * s); }
     if (embers) { const pos = embers.geometry.attributes.position, spd = embers.userData.spd; for (let i = 0; i < spd.length; i++) { pos.array[i*3+1] += spd[i]; if (pos.array[i*3+1] > 5) pos.array[i*3+1] = 0; } pos.needsUpdate = true; }
-    renderer.render(scene, camera);
+    if (composer) composer.render(); else renderer.render(scene, camera);
   }
 
   function start() { if (renderer && !running) { running = true; animate(); } }
