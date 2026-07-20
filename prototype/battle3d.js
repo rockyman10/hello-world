@@ -9,6 +9,8 @@ window.Battle3D = (function () {
 
   let renderer = null, scene = null, camera = null, canvas = null;
   let meshes = {}, particles = [], running = false, t = 0, activeId = null, state = null;
+  let punch = null; // { id, t } — ultimate camera punch-in
+  let lookTarget = null;
 
   function supported() { return typeof THREE !== 'undefined'; }
 
@@ -68,14 +70,60 @@ window.Battle3D = (function () {
     return true;
   }
 
+  // Bespoke character models — the Tier B upgrade path: one name, one build function.
+  // Blender-made geometry replaces these bodies later without touching the sync API.
+  function buildKaelis(g, armor, core) {
+    // The Unwritten Blade: cloaked duelist, horned helm, void-edge sword, orbiting glass shards.
+    const cloak = new THREE.Mesh(new THREE.ConeGeometry(0.62, 1.7, 12, 1, true),
+      new THREE.MeshStandardMaterial({ color: 0x1d1330, roughness: 0.8, metalness: 0.3, side: THREE.DoubleSide }));
+    cloak.position.y = 1.0;
+    g.add(cloak);
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 1.0, 10), armor.clone());
+    torso.position.y = 1.35;
+    g.add(torso);
+    const trim = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.035, 8, 20), core.clone());
+    trim.rotation.x = Math.PI / 2;
+    trim.position.y = 1.72;
+    g.add(trim);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), armor.clone());
+    head.position.y = 2.05;
+    g.add(head);
+    for (const s of [-1, 1]) {
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.42, 6), core.clone());
+      horn.position.set(0.16 * s, 2.32, 0);
+      horn.rotation.z = -0.5 * s;
+      g.add(horn);
+    }
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.65, 0.16), core.clone());
+    blade.position.set(0.62, 1.1, 0.25);
+    blade.rotation.z = 0.28;
+    g.add(blade);
+    const hilt = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.08), armor.clone());
+    hilt.position.set(0.4, 0.42, 0.25);
+    hilt.rotation.z = 0.28;
+    g.add(hilt);
+    const shards = [];
+    for (let i = 0; i < 3; i++) {
+      const shard = new THREE.Mesh(new THREE.TetrahedronGeometry(0.11), core.clone());
+      g.add(shard);
+      shards.push({ mesh: shard, phase: (i / 3) * Math.PI * 2 });
+    }
+    g.userData.shards = shards;
+  }
+
+  const MODELS = { 'Kaelis Vantar': buildKaelis };
+
   // Graybox voidframe: body + head + shoulders + affinity core, or a titan colossus.
   function buildUnit(u) {
     const g = new THREE.Group();
     const aff = AFF[u.affinity] || 0x8899aa;
     const armor = new THREE.MeshStandardMaterial({ color: 0x55628f, roughness: 0.4, metalness: 0.65 });
     const core = new THREE.MeshStandardMaterial({ color: aff, emissive: aff, emissiveIntensity: 0.9, roughness: 0.3, metalness: 0.2 });
+    g.userData.massive = !!u.massive;
 
-    if (u.massive) {
+    if (!u.massive && MODELS[u.name]) {
+      MODELS[u.name](g, armor, core);
+    } else if (u.massive) {
       const body = new THREE.Mesh(new THREE.IcosahedronGeometry(2.1, 1), armor.clone());
       body.position.y = 3.1;
       g.add(body);
@@ -191,7 +239,14 @@ window.Battle3D = (function () {
       else if (e.type === 'heal') burst(e.target, 0x4ade80, 16);
       else if (e.type === 'death') burst(e.target, 0xf87171, 44);
       else if (e.type === 'rebirth') burst(e.target, 0xff9944, 60);
+      else if (e.type === 'cast' && e.big && meshes[e.unit]) punch = { id: e.unit, t: 0 };
     }
+  }
+
+  // Where a unit stands (uses live mesh position, valid after layout()).
+  function unitPos(id) {
+    const m = meshes[id];
+    return m ? new THREE.Vector3(m.position.x, 1.5, m.position.z) : null;
   }
 
   function animate() {
@@ -206,8 +261,28 @@ window.Battle3D = (function () {
       camera.updateProjectionMatrix();
     }
 
-    camera.position.set(Math.sin(t) * 15.5, 7.5 + Math.sin(t * 0.6) * 0.8, Math.cos(t) * 15.5);
-    camera.lookAt(0, 1.6, 0);
+    // Default: slow orbit. On a big skill: punch in to a hero-shoulder close-up, hold, ease back.
+    const orbit = new THREE.Vector3(Math.sin(t) * 15.5, 7.5 + Math.sin(t * 0.6) * 0.8, Math.cos(t) * 15.5);
+    let look = new THREE.Vector3(0, 1.6, 0);
+    if (punch) {
+      const caster = unitPos(punch.id);
+      if (caster) {
+        const dur = 46;
+        const p = Math.min(1, punch.t / dur);
+        // ease-in fast, hold, ease-out — blend factor peaks in the middle third.
+        const blend = p < 0.7 ? Math.min(1, p / 0.18) : Math.max(0, 1 - (p - 0.7) / 0.3);
+        const dir = caster.z > 0 ? 1 : -1; // heroes at +z, foes at -z: frame from their front
+        const closeUp = new THREE.Vector3(caster.x + 2.6, 2.4, caster.z + dir * 4.2);
+        camera.position.lerpVectors(orbit, closeUp, blend);
+        look.lerpVectors(new THREE.Vector3(0, 1.6, 0), caster, blend);
+        // subtle push-in punch on impact frame
+        camera.fov = 45 - 6 * blend;
+        camera.updateProjectionMatrix();
+        if (++punch.t >= dur) { punch = null; camera.fov = 45; camera.updateProjectionMatrix(); }
+      } else { punch = null; }
+    }
+    if (!punch) camera.position.copy(orbit);
+    camera.lookAt(look);
 
     for (const id of Object.keys(meshes)) {
       const m = meshes[id];
@@ -222,6 +297,13 @@ window.Battle3D = (function () {
         m.scale.setScalar(m.scale.x + (target - m.scale.x) * 0.15);
       }
       if (m.userData.spin) m.userData.spin.rotation.z += 0.01;
+      if (m.userData.shards) {
+        for (const s of m.userData.shards) {
+          const a = t * 6 + s.phase;
+          s.mesh.position.set(Math.cos(a) * 0.85, 1.4 + Math.sin(a * 1.3) * 0.35, Math.sin(a) * 0.85);
+          s.mesh.rotation.x += 0.05; s.mesh.rotation.y += 0.04;
+        }
+      }
     }
 
     for (let i = particles.length - 1; i >= 0; i--) {
@@ -246,7 +328,8 @@ window.Battle3D = (function () {
     meshes = {};
     for (const p of particles) scene && scene.remove(p.pts);
     particles = [];
-    state = null; activeId = null;
+    state = null; activeId = null; punch = null;
+    if (camera) { camera.fov = 45; camera.updateProjectionMatrix(); }
   }
 
   return { supported, init, sync, events, start, stop, clear };

@@ -45,6 +45,19 @@ RAID's characters are 3D renders. The free path to that look:
 
 Design note: the FX layer is decoupled — the engine knows nothing about DOM; the UI consumes events. The same event stream drives Godot particles or Spine animations later without engine changes.
 
+### 3b. The "zone-in" layer — motion & celebration (implemented)
+
+The three highest-retention visual ingredients from §5's ranking are now live in the prototype:
+
+| Ingredient | Implementation | Why it holds attention |
+|---|---|---|
+| **Ultimate camera punch-in** (3D) | On any cooldown skill, the orbiting camera eases into a shoulder-level close-up of the caster with an FOV push, holds on the impact frame, then eases back | The screen *reacts* to your big moments — ZZZ/HSR's core game-feel trick |
+| **Skill cut-in banner** (2D + 3D) | A portrait sweeps in from the left, the skill name flashes in the caster's affinity color across a letterboxed band | Turns every signature skill into a beat; the single most repeated "juice" moment in a session |
+| **Pull cinematic** | Warp-speed starfield streaking in the batch's rarity color → core flash → rarity-colored "SIGNAL LOCKED" headline with the top pull's portrait and epithet → full grid. Skippable at any point | The highest-perceived-value 15 seconds in any gacha; the reason people screenshot pulls |
+| **Bespoke character models** | `MODELS` registry in `battle3d.js` — Kaelis Vantar is the first hand-built model (cloak, horned helm, void-edge blade, orbiting glass shards) replacing his graybox; others drop in one name at a time | Proves the Tier-B upgrade path: collection value rises per character without an engine rewrite |
+
+These are the pieces that make a session feel alive between the strategic decisions — exactly the "keep players zoned in" layer.
+
 ## 4. UI skin evolution
 
 The current "neon-void deco" palette stays (it's our differentiation vs. RAID's brown-gold grimdark), but adopts RAID's *hierarchy rules*: gold is reserved for rewards, crits, and 5★/PRIME moments; red-pink for threat (titans, the Eclipsed); House colors never used for system chrome. When real character art lands, cards shift art-first: full-bleed portrait, UI as a thin overlay.
