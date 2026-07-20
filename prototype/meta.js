@@ -116,7 +116,27 @@ const GEAR_SETS = {
   aegis:     { label: 'Aegis',     desc: '+40% DEF, +10% HP',        def: 0.40, hp: 0.10 },
   targeting: { label: 'Targeting', desc: '+75 ACC (land debuffs)',   acc: 75 },
   precision: { label: 'Precision', desc: '+15% crit chance',         critRate: 0.15 },
+  // Titan-forged sets: locked until the matching Archive Titan is slain.
+  serpentscale: { label: 'Serpentscale',  desc: '+30% DEF, +12% SPD (titan-forged)', def: 0.30, spd: 0.12, titan: 'vormungand' },
+  phoenixplume: { label: 'Phoenix Plume', desc: '+30% ATK, +10% HP (titan-forged)',  atk: 0.30, hp: 0.10, titan: 'pyrrhax' },
+  ninefoldeye:  { label: 'Ninefold Eye',  desc: '+90 ACC, +12% crit (titan-forged)', acc: 90, critRate: 0.12, titan: 'maw' },
 };
+
+function gearUnlocked(profile, setKey) {
+  const g = GEAR_SETS[setKey];
+  if (!g) return false;
+  if (!g.titan) return true;
+  return (profile.gearUnlocks || []).includes(setKey);
+}
+
+function unlockTitanGear(profile, titanId) {
+  const key = Object.keys(GEAR_SETS).find((k) => GEAR_SETS[k].titan === titanId);
+  if (!key) return null;
+  profile.gearUnlocks = profile.gearUnlocks || [];
+  if (profile.gearUnlocks.includes(key)) return null;
+  profile.gearUnlocks.push(key);
+  return key;
+}
 
 function withGear(def, setKey) {
   if (!setKey || !GEAR_SETS[setKey]) return def;
@@ -171,6 +191,23 @@ const ENCOUNTERS = [
     firstClear: { voidglass: 2400, caches: 2, credits: 1500 }, repeat: { voidglass: 80, caches: 0, credits: 200 },
     foes: S.FOES,
   },
+  {
+    id: 'vantargate', name: 'Chapter II: The Vantar Gate', tier: 'Chapter II',
+    desc: 'House Vantar has sealed the fracture lane home — their toll is the truth about the Compact. Sable-of-Nine\'s Herald waits at the gate, and it does not intend to let the toll be paid.',
+    firstClear: { voidglass: 2800, caches: 2, credits: 1800 }, repeat: { voidglass: 90, caches: 0, credits: 220 },
+    foes: [
+      { name: 'Compact Sentinel I', affinity: 'umbral', role: 'Add', hp: 16000, atk: 1500, def: 600, spd: 115, critRate: 0.2, critDmg: 1.6, acc: 220, res: 160,
+        skills: [{ name: 'Gravemark Cut', mult: 1.0, target: 'enemy' },
+                 { name: 'Compact Seal', cd: 3, mult: 1.2, target: 'enemy', effects: [{ type: 'jam', turns: 2, chance: 0.6 }] }] },
+      { name: 'Compact Sentinel II', affinity: 'umbral', role: 'Add', hp: 16000, atk: 1500, def: 600, spd: 106, critRate: 0.2, critDmg: 1.6, acc: 220, res: 160,
+        skills: [{ name: 'Gravemark Cut', mult: 1.0, target: 'enemy' },
+                 { name: 'Void Lattice', cd: 4, target: 'allAllies', effects: [{ type: 'plating', turns: 2 }] }] },
+      { name: 'Herald of Sable', affinity: 'umbral', role: 'Paradox Herald', hp: 58000, atk: 2100, def: 700, spd: 185, critRate: 0.25, critDmg: 1.8, acc: 300, res: 260, enrage: 0.11,
+        skills: [{ name: 'Nine-Edged Word', mult: 1.2, target: 'enemy' },
+                 { name: 'Unwriting Grasp', cd: 3, mult: 1.0, target: 'allEnemies', tmDrain: 0.2, effects: [{ type: 'corrosion', turns: 2, chance: 0.45 }] },
+                 { name: 'The Toll', cd: 3, mult: 2.2, target: 'enemy', effects: [{ type: 'healBlackout', turns: 2, chance: 0.85 }] }] },
+    ],
+  },
 ];
 
 function encounterById(id) { return ENCOUNTERS.find((e) => e.id === id); }
@@ -206,6 +243,19 @@ const STORY = {
       { who: 'NAVIGATOR', text: 'Then we unwrite it. Find me the Warden.' },
     ],
   },
+  vantargate: {
+    intro: [
+      { who: 'MERIDIAN', text: 'The fracture lane home is sealed. House Vantar signet on the gate-code. They knew we were coming before we did.' },
+      { who: 'KAELIS VANTAR', text: 'They always know. That is the Compact\'s whole sin, Navigator — they charted the Eclipse before it swallowed Earth, and they sold the maps one system at a time.' },
+      { who: 'SABLE-OF-NINE', text: 'Kaelis. You stand on the wrong side of my gate, little blade. I have sent a Herald to read you the toll.' },
+      { who: 'NAVIGATOR', text: 'We pay no tolls to paradox. Anchors up — we go through the Herald.' },
+    ],
+    outro: [
+      { who: 'KAELIS VANTAR', text: 'The Herald is unwritten. And the gate archives are open... Navigator, you should see this. Every rewritten system — my House logged them all. Before they fell.' },
+      { who: 'MERIDIAN', text: 'Cross-referencing. The next entry in the ledger is not a system. It is a name: MERIDIAN.' },
+      { who: 'NAVIGATOR', text: 'Then Chapter Two is about us. Chart everything. We\'re going into the Vantar archives.' },
+    ],
+  },
   warden: {
     intro: [
       { who: 'MERIDIAN', text: 'There. The heart of the yard. It is healing the timeline around it faster than reality can wound it.' },
@@ -231,6 +281,7 @@ function newProfile() {
     caches: 2,
     credits: 2000,
     lastCollect: Date.now(),
+    gearUnlocks: [],
     pity5: 0,
     sinceFour: 0,
     guaranteedFeatured: false,
@@ -250,6 +301,7 @@ function newProfile() {
 function migrateProfile(p) {
   if (p.credits == null) p.credits = 0;
   if (p.lastCollect == null) p.lastCollect = Date.now();
+  if (p.gearUnlocks == null) p.gearUnlocks = [];
   for (const o of Object.values(p.owned)) if (o.level == null) o.level = 1;
   return p;
 }
@@ -356,6 +408,54 @@ function pickBlessings(rng, count) {
 
 function riftReward(profile, depthIdx) {
   const r = RIFT.depths[depthIdx].reward;
+  profile.voidglass += r.voidglass || 0;
+  profile.credits += r.credits || 0;
+  profile.caches += r.caches || 0;
+  return r;
+}
+
+// ---------------------------------------------------------------- Eclipse Frontier
+// Rotating seasonal gauntlet: three stages, no healing between, one weekly
+// modifier that applies to BOTH sides. Big one-time seasonal jackpot.
+
+const FRONTIER = {
+  seasonKey: 'frontier:s1',
+  season: 'Season 1: The Shedding Sky',
+  modifiers: [
+    { id: 'violent',   label: 'Violent Era',         desc: 'All combatants +30% ATK — kill or be killed', atk: 0.30 },
+    { id: 'overclock', label: 'Overclocked Reality', desc: 'All combatants +25% SPD — the meter never rests', spd: 0.25 },
+    { id: 'hardened',  label: 'Hardened Timeline',   desc: 'All combatants +35% DEF — bring debuffs, not raw hits', def: 0.35 },
+  ],
+  stages: [
+    { name: 'Frontier Line I',   from: 'sweep',    mult: 3.4,  reward: { voidglass: 200, credits: 700 } },
+    { name: 'Frontier Line II',  from: 'cryocell', mult: 1.5,  reward: { voidglass: 350, credits: 1200 } },
+    { name: 'Frontier Line III', from: 'warden',   mult: 1.75, reward: { voidglass: 600, credits: 2000, caches: 1 } },
+  ],
+  clearBonus: { voidglass: 1500, caches: 2 },
+};
+
+function frontierModifier(now) {
+  const week = Math.floor((now == null ? Date.now() : now) / (7 * 86400000));
+  return FRONTIER.modifiers[week % FRONTIER.modifiers.length];
+}
+
+function applyModifier(defs, mod) {
+  return defs.map((d) => ({
+    ...d,
+    atk: Math.round(d.atk * (1 + (mod.atk || 0))),
+    def: Math.round(d.def * (1 + (mod.def || 0))),
+    spd: Math.round(d.spd * (1 + (mod.spd || 0))),
+  }));
+}
+
+function frontierStageFoes(stageIdx, now) {
+  const st = FRONTIER.stages[stageIdx];
+  const foes = encounterById(st.from).foes.map((f) => scaleDef(f, st.mult));
+  return applyModifier(foes, frontierModifier(now));
+}
+
+function frontierStageReward(profile, stageIdx) {
+  const r = FRONTIER.stages[stageIdx].reward;
   profile.voidglass += r.voidglass || 0;
   profile.credits += r.credits || 0;
   profile.caches += r.caches || 0;
@@ -596,6 +696,7 @@ function shardBuy(profile, name) {
 function equipGear(profile, name, setKey) {
   const entry = profile.owned[name];
   if (!entry) return false;
+  if (setKey && !gearUnlocked(profile, setKey)) return false;
   if (setKey === entry.gear) return true;
   if (setKey && !entry.gear) {
     if (profile.caches < 1) return false;
@@ -628,6 +729,8 @@ return {
   RIFT, scaleDef, riftFoes, applyBlessings, pickBlessings, riftReward,
   claimReward, TITANS, titanById,
   VAULT_REWARD_FIRST, VAULT_REWARD_REPEAT, vaultFoes, vaultRoster, vaultSquadDefs,
+  gearUnlocked, unlockTitanGear,
+  FRONTIER, frontierModifier, applyModifier, frontierStageFoes, frontierStageReward,
   newProfile, migrateProfile, squadDefs, withGear, kinshipFactions,
   fiveStarChance, pullOne, doPulls, shardBuy, equipGear, applyVictory,
 };

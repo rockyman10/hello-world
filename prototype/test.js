@@ -283,3 +283,89 @@ function winRate(heroDefs, encId, runs) {
 
   console.log(`Titans OK — auto win rates for lvl25 geared 5★s: Vormungand ${(100 * vor.winRate).toFixed(0)}%, Pyrrhax ${(100 * pyr.winRate).toFixed(0)}%, Maw ${(100 * maw.winRate).toFixed(0)}% — all signature mechanics fired. Vaults OK.`);
 }
+
+// ---------------------------------------------------------------- frontier, titan gear, ch2, events
+
+{
+  const gearFor = (d) => d.role === 'Attack' ? 'assault' : d.role === 'Mender' ? 'velocity' : d.role === 'Support' ? 'targeting' : 'aegis';
+  const endgame = S.HEROES.map((d) => M.withGear(M.withLevel(d, 25), gearFor(d)));
+
+  // Combat event stream feeds the VFX layer.
+  {
+    const st = S.newBattle(11, endgame, M.encounterById('sweep').foes);
+    let n = 0;
+    while (!st.winner) { S.stepAuto(st); if (++n > 400) break; }
+    const types = new Set(st.events.map((e) => e.type));
+    if (!types.has('hit') || !types.has('cast') || !types.has('death')) throw new Error('event stream incomplete: ' + [...types]);
+    const hitEvents = st.events.filter((e) => e.type === 'hit').length;
+    const hitLogs = st.log.filter((l) => / hits /.test(l.text)).length;
+    if (hitEvents !== hitLogs) throw new Error(`event/log hit mismatch: ${hitEvents} vs ${hitLogs}`);
+  }
+
+  // Titan gear: locked until slain, unlock is idempotent, then equippable.
+  {
+    const p = M.newProfile();
+    if (M.equipGear(p, 'Mika Tan', 'serpentscale')) throw new Error('locked titan gear equipped');
+    if (M.unlockTitanGear(p, 'vormungand') !== 'serpentscale') throw new Error('titan gear unlock wrong');
+    if (M.unlockTitanGear(p, 'vormungand') !== null) throw new Error('titan gear unlock not idempotent');
+    if (!M.equipGear(p, 'Mika Tan', 'serpentscale')) throw new Error('unlocked titan gear refused');
+    for (const k of Object.keys(M.GEAR_SETS)) {
+      if (M.GEAR_SETS[k].titan && !M.titanById(M.GEAR_SETS[k].titan)) throw new Error(`gear ${k} references unknown titan`);
+    }
+    const titansWithGear = new Set(Object.values(M.GEAR_SETS).filter((g) => g.titan).map((g) => g.titan));
+    if (titansWithGear.size !== M.TITANS.length) throw new Error('not every titan drops a gear set');
+  }
+
+  // Chapter 2 gate: winnable by an endgame squad, and its story exists (lore suite also checks).
+  {
+    let w = 0;
+    for (let seed = 1; seed <= 100; seed++) {
+      const st = S.newBattle(seed, endgame, M.encounterById('vantargate').foes);
+      let n = 0;
+      while (!st.winner) { S.stepAuto(st); if (++n > 600) throw new Error('vantargate no termination'); }
+      if (st.winner === 'hero') w++;
+    }
+    if (w < 50) throw new Error(`Vantar Gate too hard for endgame squad: ${w}%`);
+    if (M.ENCOUNTERS[M.ENCOUNTERS.length - 1].id !== 'vantargate') throw new Error('Chapter II must come after the warden');
+  }
+
+  // Frontier: modifier rotation is deterministic, both sides get modified, full runs land in a challenge band.
+  {
+    const wk = 7 * 86400000;
+    if (M.frontierModifier(0).id !== M.FRONTIER.modifiers[0].id) throw new Error('modifier week 0 wrong');
+    if (M.frontierModifier(wk).id !== M.FRONTIER.modifiers[1].id) throw new Error('modifier rotation wrong');
+    const mod = { atk: 0.3 };
+    const boosted = M.applyModifier(endgame, mod);
+    if (boosted[0].atk !== Math.round(endgame[0].atk * 1.3)) throw new Error('applyModifier math wrong');
+    if (M.frontierStageFoes(0, 0)[0].hp !== Math.round(M.encounterById('sweep').foes[0].hp * M.FRONTIER.stages[0].mult)) throw new Error('frontier scaling wrong');
+
+    let full = 0;
+    for (let seed = 1; seed <= 50; seed++) {
+      const m = M.frontierModifier(0);
+      const heroes = M.applyModifier(endgame, m);
+      let hpFrac = {}, cleared = 0;
+      for (let stg = 0; stg < 3; stg++) {
+        const st = S.newBattle(seed * 7 + stg, heroes, M.frontierStageFoes(stg, 0));
+        for (const u of st.units) if (u.side === 'hero' && hpFrac[u.name] != null) u.hp = Math.max(1, Math.round(u.maxHp * hpFrac[u.name]));
+        let n = 0;
+        while (!st.winner) { S.stepAuto(st); if (++n > 600) throw new Error('frontier no termination'); }
+        if (st.winner !== 'hero') break;
+        for (const u of st.units) if (u.side === 'hero') hpFrac[u.name] = u.alive ? u.hp / u.maxHp : 0.05;
+        cleared++;
+      }
+      if (cleared === 3) full++;
+    }
+    const pct = full * 2;
+    if (pct < 15 || pct > 95) throw new Error(`frontier full-clear out of band: ${pct}%`);
+
+    // Stage rewards pay; seasonal bonus claims once.
+    const p = M.newProfile();
+    const vg = p.voidglass;
+    M.frontierStageReward(p, 0);
+    if (p.voidglass !== vg + 200) throw new Error('frontier stage reward wrong');
+    const b1 = M.claimReward(p, M.FRONTIER.seasonKey, M.FRONTIER.clearBonus, { voidglass: 0 });
+    const b2 = M.claimReward(p, M.FRONTIER.seasonKey, M.FRONTIER.clearBonus, { voidglass: 0 });
+    if (!b1.first || b2.first) throw new Error('seasonal bonus not one-time');
+    console.log(`Frontier OK — modifier rotation deterministic, full-clear ${pct}% under '${M.frontierModifier(0).label}'. Titan gear gating OK, Chapter II gate OK, event stream OK.`);
+  }
+}

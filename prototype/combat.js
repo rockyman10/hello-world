@@ -119,6 +119,7 @@ function dealDamage(state, attacker, target, mult) {
   target.shield -= absorbed;
   target.hp = Math.max(0, target.hp - (dmg - absorbed));
   log(state, `${attacker.name} hits ${target.name} for ${dmg}${tag}`, tag ? 'crit' : '');
+  if (state.events) state.events.push({ type: 'hit', target: target.id, amount: dmg, crit: tag.includes('CRIT'), weak });
   if (target.hp === 0) kill(state, target);
   return dmg;
 }
@@ -132,6 +133,7 @@ function heal(state, source, target, pctOfMax) {
   const amount = Math.round(target.maxHp * pctOfMax);
   target.hp = Math.min(target.maxHp, target.hp + amount);
   log(state, `${source.name} heals ${target.name} for ${amount}`, 'heal');
+  if (state.events) state.events.push({ type: 'heal', target: target.id, amount });
 }
 
 function kill(state, unit) {
@@ -140,12 +142,14 @@ function kill(state, unit) {
     unit.hp = Math.round(unit.maxHp * 0.4);
     unit.effects = [];
     log(state, `${unit.name} collapses into ash... and ERUPTS REBORN in starfire!`, 'kill');
+    if (state.events) state.events.push({ type: 'rebirth', target: unit.id });
     return;
   }
   unit.alive = false;
   unit.effects = [];
   unit.meter = 0;
   log(state, `${unit.name} is destroyed!`, 'kill');
+  if (state.events) state.events.push({ type: 'death', target: unit.id });
 }
 
 // Titan phase transitions: checked at the titan's own turn start.
@@ -294,6 +298,7 @@ function castSkill(state, actor, skillIdx, target) {
   const s = actor.skills[skillIdx];
   actor.cooldowns[skillIdx] = s.cd || 0;
   log(state, `— ${actor.name} uses ${s.name} —`, 'skill');
+  if (state.events) state.events.push({ type: 'cast', unit: actor.id, skill: s.name, big: !!s.cd });
 
   const foes = livingEnemies(state, actor);
   const allies = livingAllies(state, actor);
@@ -446,6 +451,7 @@ function newBattle(seed, heroDefs, foeDefs) {
     rng: makeRng(seed ?? (Date.now() & 0xffffffff)),
     units: [],
     log: [],
+    events: [],
     turnCount: 0,
     winner: null,
   };

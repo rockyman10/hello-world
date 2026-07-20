@@ -194,6 +194,63 @@
   .vaultcard .info { flex: 1; min-width: 220px; }
   .vaultcard h3 { font-size: 14px; }
   .vaultcard p { font-size: 10px; color: var(--dim); margin-top: 3px; }
+
+  /* ---- RAID-style battle presentation ---- */
+  #battle.on #battlefield {
+    background:
+      radial-gradient(1px 1px at 15% 25%, #fff8, transparent 40%),
+      radial-gradient(1px 1px at 70% 15%, #fff6, transparent 40%),
+      radial-gradient(1px 1px at 40% 70%, #fff7, transparent 40%),
+      radial-gradient(2px 2px at 85% 60%, #fff5, transparent 40%),
+      radial-gradient(1px 1px at 25% 85%, #fff6, transparent 40%),
+      radial-gradient(1px 1px at 60% 45%, #fff4, transparent 40%),
+      radial-gradient(ellipse 80% 50% at 50% 0%, #2a1a5e33, transparent),
+      radial-gradient(ellipse 60% 40% at 80% 100%, #5e1a4a22, transparent);
+    border: 1px solid var(--line); border-radius: 14px; padding: 14px 8px 6px;
+    animation: nebulaDrift 30s linear infinite alternate;
+  }
+  @keyframes nebulaDrift { from { background-position: 0 0; } to { background-position: 30px 12px; } }
+  #battlefield.shake { animation: shakeHit .3s; }
+  @keyframes shakeHit {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(-6px, 3px); } 40% { transform: translate(5px, -4px); }
+    60% { transform: translate(-4px, -2px); } 80% { transform: translate(3px, 2px); }
+  }
+  #fxlayer { position: fixed; inset: 0; pointer-events: none; z-index: 50; overflow: hidden; }
+  .dmgnum {
+    position: absolute; font-weight: 800; font-family: "Segoe UI", system-ui, sans-serif;
+    text-shadow: 0 2px 6px #000c; animation: dmgRise .9s ease-out forwards; white-space: nowrap;
+  }
+  .dmgnum.norm { color: #ffffff; font-size: 17px; }
+  .dmgnum.crit { color: var(--gold); font-size: 26px; animation: critPop .9s ease-out forwards; }
+  .dmgnum.weak { color: #9aa4c4; font-size: 13px; }
+  .dmgnum.heal { color: var(--hp); font-size: 17px; }
+  @keyframes dmgRise { 0% { opacity: 0; transform: translateY(6px) scale(.7); } 15% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-42px) scale(1); } }
+  @keyframes critPop { 0% { opacity: 0; transform: translateY(4px) scale(.5) rotate(-6deg); } 18% { opacity: 1; transform: translateY(-4px) scale(1.25) rotate(2deg); } 35% { transform: translateY(-8px) scale(1) rotate(0); } 100% { opacity: 0; transform: translateY(-52px) scale(1); } }
+  .hitflash { position: absolute; border-radius: 10px; background: radial-gradient(circle, #ffffff2e 0%, transparent 70%); animation: flashOut .35s ease-out forwards; }
+  .hitflash.critf { background: radial-gradient(circle, #ffd75e4d 0%, transparent 70%); }
+  @keyframes flashOut { from { opacity: 1; } to { opacity: 0; } }
+  .castring { position: absolute; border: 2px solid var(--accent); border-radius: 12px; animation: castPulse .5s ease-out forwards; }
+  @keyframes castPulse { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(1.12); } }
+  .emblem { border-radius: 8px; flex: none; }
+  .cardhead { display: flex; align-items: center; gap: 6px; }
+  #turnRibbon {
+    display: flex; gap: 5px; justify-content: center; align-items: center;
+    margin-bottom: 10px; min-height: 30px; flex-wrap: wrap;
+  }
+  #turnRibbon .rlabel { font-size: 8px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-right: 4px; }
+  .ribchip {
+    width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 800; color: #0a0e1a; border: 2px solid transparent;
+  }
+  .ribchip.first { width: 32px; height: 32px; font-size: 11px; box-shadow: 0 0 10px var(--accent); }
+  .ribchip.foe { border-color: var(--hp-low); }
+  .ribchip.hero { border-color: var(--hp); }
+
+  /* frontier */
+  .modcard { background: linear-gradient(135deg, #301a10 0%, var(--panel) 60%); border: 1px solid var(--gold); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+  .modcard h3 { color: var(--gold); font-size: 15px; letter-spacing: 2px; }
+  .modcard p { font-size: 11px; color: var(--dim); margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -204,6 +261,7 @@
       <button data-s="missions" class="on">Missions</button>
       <button data-s="rift">Void Rift</button>
       <button data-s="titans">Titan Hunts</button>
+      <button data-s="frontier">Frontier</button>
       <button data-s="vaults">House Vaults</button>
       <button data-s="hangar">Hangar</button>
       <button data-s="gacha">Signal Array</button>
@@ -211,14 +269,18 @@
 
     <div id="missions" class="screen on"></div>
     <div id="rift" class="screen"></div>
+    <div id="frontier" class="screen"></div>
     <div id="titans" class="screen"></div>
     <div id="vaults" class="screen"></div>
     <div id="hangar" class="screen"></div>
     <div id="gacha" class="screen"></div>
 
     <div id="battle" class="screen">
-      <div class="row" id="foeRow"></div>
-      <div class="row" id="heroRow"></div>
+      <div id="turnRibbon"></div>
+      <div id="battlefield">
+        <div class="row" id="foeRow"></div>
+        <div class="row" id="heroRow"></div>
+      </div>
       <div id="hint"></div>
       <div id="hud">
         <div id="skills"></div>
@@ -242,6 +304,7 @@
     <div id="reveal-grid"></div>
     <button class="close" onclick="hide('revealModal')">COLLECT</button>
   </div>
+  <div id="fxlayer"></div>
   <div class="modal" id="blessModal">
     <h2 style="font-size:18px">Choose a Blessing</h2>
     <div class="sub2" style="color:var(--dim);font-size:11px">The rift offers power to those who descend.</div>
@@ -291,6 +354,7 @@ function switchScreen(name) {
   $('tabs').style.display = name === 'battle' ? 'none' : 'flex';
   if (name === 'missions') renderMissions();
   if (name === 'rift') renderRift();
+  if (name === 'frontier') renderFrontier();
   if (name === 'titans') renderTitans();
   if (name === 'vaults') renderVaults();
   if (name === 'hangar') renderHangar();
@@ -395,6 +459,49 @@ function startVault(factionKey) {
   loop();
 }
 
+// ------------------------------------------------------------ eclipse frontier
+
+let frontier = null; // { stage, hpFrac }
+
+function renderFrontier() {
+  const mod = M.frontierModifier();
+  const seasonDone = profile.cleared[M.FRONTIER.seasonKey];
+  const stages = M.FRONTIER.stages.map((st, i) => `<div class="depthcard">
+    <span><b>${st.name}</b> <span style="color:var(--dim)">(enemy power ×${st.mult})</span></span>
+    <span class="dr">⬡${st.reward.voidglass} + ¢${st.reward.credits}${st.reward.caches ? ` + ▣${st.reward.caches}` : ''}</span>
+  </div>`).join('');
+  $('frontier').innerHTML = `
+    <div class="modcard">
+      <h3>ECLIPSE FRONTIER — ${M.FRONTIER.season}</h3>
+      <p>This week's protocol: <b style="color:var(--gold)">${mod.label}</b> — ${mod.desc}. The modifier applies to <b>both sides</b>. Three lines, no healing between, wounds persist.</p>
+      <p>${seasonDone ? 'Seasonal jackpot claimed — lines still pay per stage.' : `Seasonal full-clear jackpot: <b style="color:var(--gold)">⬡${M.FRONTIER.clearBonus.voidglass} + ▣${M.FRONTIER.clearBonus.caches}</b> (one-time)`}</p>
+    </div>
+    ${stages}
+    <div style="text-align:center;margin-top:12px">
+      <button class="launch" id="frontierEnter" ${profile.squad.length ? '' : 'disabled'}>HOLD THE LINE ▸</button>
+    </div>`;
+  $('frontierEnter').onclick = () => {
+    frontier = { stage: 0, hpFrac: {} };
+    startFrontierBattle();
+  };
+}
+
+function startFrontierBattle() {
+  const mod = M.frontierModifier();
+  const heroes = M.applyModifier(M.squadDefs(profile), mod);
+  bstate = S.newBattle(undefined, heroes, M.frontierStageFoes(frontier.stage));
+  for (const u of bstate.units) {
+    if (u.side === 'hero' && frontier.hpFrac[u.name] != null) {
+      u.hp = Math.max(1, Math.round(u.maxHp * frontier.hpFrac[u.name]));
+    }
+  }
+  bstate.log.push({ text: `— ${M.FRONTIER.stages[frontier.stage].name} · protocol: ${mod.label} —`, cls: 'skill', turn: 0 });
+  currentActor = null; pendingSkill = null;
+  switchScreen('battle');
+  render();
+  loop();
+}
+
 // ------------------------------------------------------------ void rift
 
 let rift = null; // { depth, hpFrac: {name: frac}, blessings: [ids] }
@@ -479,10 +586,11 @@ function renderHangar() {
     const lore = M.LORE[n] || {};
     const fac = M.FACTIONS[lore.faction];
     const hasKinship = inSquad && bonded.includes(lore.faction);
-    const opts = ['<option value="">— no gear —</option>'].concat(Object.entries(M.GEAR_SETS).map(([k, g]) =>
-      `<option value="${k}" ${o.gear === k ? 'selected' : ''}>${g.label} · ${g.desc}</option>`)).join('');
+    const opts = ['<option value="">— no gear —</option>'].concat(Object.entries(M.GEAR_SETS)
+      .filter(([k, g]) => !g.titan || M.gearUnlocked(profile, k))
+      .map(([k, g]) => `<option value="${k}" ${o.gear === k ? 'selected' : ''}>${g.titan ? '☠ ' : ''}${g.label} · ${g.desc}</option>`)).join('');
     return `<div class="unit r${u.rarity}">
-      <div><span class="stars">${'★'.repeat(u.rarity)}</span> <span class="tiername">${M.RARITY_NAMES[u.rarity]}</span> <span class="cname">${n}</span>${o.copies > 1 ? ` <span style="font-size:9px;color:var(--dim)">+${o.copies - 1}</span>` : ''}</div>
+      <div class="cardhead">${emblem(n, d.affinity, 32)}<div><span class="stars">${'★'.repeat(u.rarity)}</span> <span class="tiername">${M.RARITY_NAMES[u.rarity]}</span><br><span class="cname">${n}</span>${o.copies > 1 ? ` <span style="font-size:9px;color:var(--dim)">+${o.copies - 1}</span>` : ''}</div></div>
       <div class="epithet">“${lore.epithet || ''}”</div>
       <div class="tagline"><span class="aff ${d.affinity}">${d.affinity}</span> ${d.role} ${fac ? `<span class="fac" style="color:${fac.color};border-color:${fac.color}">${fac.label}</span>` : ''}</div>
       ${lvlRow}
@@ -559,9 +667,11 @@ function pulls(n) {
   save();
   $('reveal-grid').innerHTML = results.map((r) => {
     const lore = M.LORE[r.name];
+    const unitDef = M.UNITS[r.name];
     return `<div class="pull-card r${r.rarity}">
     <div class="pr">${'★'.repeat(r.rarity)}</div>
     <div class="tiername">${M.RARITY_NAMES[r.rarity]}</div>
+    ${unitDef ? `<div style="display:flex;justify-content:center;margin:4px 0">${emblem(r.name, unitDef.def.affinity, 44)}</div>` : ''}
     <div class="pn">${r.name}</div>
     ${lore ? `<div class="epithet">“${lore.epithet}”</div>` : ''}
     ${r.isNew ? '<div class="new">NEW OPERATIVE!</div>' : `<div class="dupe">+◆${r.shards}</div>`}
@@ -637,6 +747,95 @@ function startBattle(encId) {
   else begin();
 }
 
+// ---- RAID-style presentation layer ----
+
+const AFF_HEX = { ion: '#7dd3fc', cryo: '#a5b4fc', plasma: '#fda4af', umbral: '#c084fc' };
+
+function initials(name) {
+  const words = name.replace(/[^A-Za-z0-9 -]/g, '').split(/[\s-]+/).filter(Boolean);
+  return (words.length > 1 ? words[0][0] + words[1][0] : name.slice(0, 2)).toUpperCase();
+}
+
+// Procedural character emblem: affinity-colored hex crest with House ring + initials.
+function emblem(name, affinity, size, massive) {
+  const aff = AFF_HEX[affinity] || '#888';
+  const lore = M.LORE[name];
+  const ring = lore && M.FACTIONS[lore.faction] ? M.FACTIONS[lore.faction].color : (massive ? '#f472b6' : '#2a3352');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${aff}"/><stop offset="1" stop-color="#0a0e1a"/>
+    </linearGradient></defs>
+    <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="url(#g)" stroke="${ring}" stroke-width="2.5"/>
+    ${massive ? `<polygon points="20,6 33,13 33,27 20,34 7,27 7,13" fill="none" stroke="#f472b6" stroke-width="1" opacity=".7"/>` : ''}
+    <text x="20" y="25" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="13" font-weight="800" fill="#0a0e1a">${initials(name)}</text>
+  </svg>`;
+  return `<img class="emblem" width="${size}" height="${size}" alt="" src="data:image/svg+xml,${encodeURIComponent(svg)}">`;
+}
+
+// Floating damage numbers / flashes / cast pulses, driven by the engine's event stream.
+let eventCursor = 0;
+
+function cardRect(id) {
+  const el = document.querySelector(`.card[data-id="${id}"]`);
+  return el ? el.getBoundingClientRect() : null;
+}
+
+function spawnFx(html, rect, cls) {
+  const fx = document.createElement('div');
+  fx.className = cls;
+  fx.innerHTML = html;
+  $('fxlayer').appendChild(fx);
+  fx.style.left = rect.left + rect.width / 2 - fx.offsetWidth / 2 + (Math.random() * 24 - 12) + 'px';
+  fx.style.top = rect.top + rect.height * 0.3 + 'px';
+  setTimeout(() => fx.remove(), 950);
+}
+
+function processEvents() {
+  if (!bstate) return;
+  if (eventCursor > bstate.events.length) eventCursor = 0; // new battle started
+  const fresh = bstate.events.slice(eventCursor);
+  eventCursor = bstate.events.length;
+  for (const e of fresh) {
+    const rect = cardRect(e.target || e.unit);
+    if (!rect) continue;
+    if (e.type === 'hit') {
+      const cls = e.crit ? 'crit' : e.weak ? 'weak' : 'norm';
+      spawnFx(`-${e.amount}${e.crit ? '!' : ''}`, rect, `dmgnum ${cls}`);
+      const flash = document.createElement('div');
+      flash.className = 'hitflash' + (e.crit ? ' critf' : '');
+      Object.assign(flash.style, { left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
+      $('fxlayer').appendChild(flash);
+      setTimeout(() => flash.remove(), 400);
+      if (e.crit || e.amount > 3000) {
+        const bf = $('battlefield');
+        bf.classList.remove('shake'); void bf.offsetWidth; bf.classList.add('shake');
+      }
+    } else if (e.type === 'heal') {
+      spawnFx(`+${e.amount}`, rect, 'dmgnum heal');
+    } else if (e.type === 'cast' && e.big) {
+      const ring = document.createElement('div');
+      ring.className = 'castring';
+      Object.assign(ring.style, { left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
+      $('fxlayer').appendChild(ring);
+      setTimeout(() => ring.remove(), 550);
+    } else if (e.type === 'rebirth') {
+      spawnFx('REBORN', rect, 'dmgnum crit');
+    }
+  }
+}
+
+// Turn-order forecast ribbon (the RAID signature strip).
+function renderRibbon() {
+  const living = bstate.units.filter((u) => u.alive);
+  const order = living
+    .map((u) => ({ u, eta: (S.METER_MAX - u.meter) / Math.max(1, S.effStat(u, 'spd')) }))
+    .sort((a, b) => a.eta - b.eta)
+    .slice(0, 8);
+  $('turnRibbon').innerHTML = '<span class="rlabel">Next ▸</span>' + order.map(({ u }, i) =>
+    `<span class="ribchip ${u.side} ${i === 0 ? 'first' : ''}" title="${u.name}" style="background:${AFF_HEX[u.affinity] || '#888'}">${initials(u.name)}</span>`
+  ).join('');
+}
+
 function fxChips(u) {
   return u.effects.map((e) => {
     const m = S.EFFECTS[e.type];
@@ -657,7 +856,7 @@ function card(u) {
     ? ` · phases ${u.phases.filter((p) => p.done).length}/${u.phases.length}` : '';
   const rebirthNote = u.rebirth ? (u.rebirthUsed ? ' · reborn' : ' · WILL BE REBORN') : '';
   return `<div class="${classes.join(' ')}" data-id="${u.id}">
-    <div class="cname">${u.name}</div>
+    <div class="cardhead">${emblem(u.name, u.affinity, u.massive ? 40 : 26, u.massive)}<div class="cname">${u.name}</div></div>
     <div class="tagline"><span class="aff ${u.affinity}">${u.affinity}</span> ${u.role}${u.enrage && u.enrageStacks ? ` · enrage +${Math.round(u.enrage * u.enrageStacks * 100)}%` : ''}${phaseNote}${rebirthNote}</div>
     <div class="bar"><i class="hpfill ${u.hp / u.maxHp < 0.35 ? 'low' : ''}" style="width:${hpPct}%"></i></div>
     ${u.shield > 0 ? `<div class="bar"><i class="shieldfill" style="width:${shPct}%"></i></div>` : ''}
@@ -678,8 +877,10 @@ function render() {
   $('foeRow').innerHTML = bstate.units.filter((u) => u.side === 'foe').map(card).join('');
   $('heroRow').innerHTML = bstate.units.filter((u) => u.side === 'hero').map(card).join('');
   for (const el of document.querySelectorAll('.card.targetable')) el.onclick = () => pickTarget(el.dataset.id);
+  renderRibbon();
   renderSkills();
   renderLog();
+  processEvents();
 }
 
 function renderSkills() {
@@ -749,6 +950,30 @@ let pendingOutro = null;
 function endBattle() {
   if (!bstate || !bstate.winner) return;
   render();
+  if (frontier) {
+    if (bstate.winner === 'hero') {
+      for (const u of bstate.units) {
+        if (u.side === 'hero') frontier.hpFrac[u.name] = u.alive ? u.hp / u.maxHp : 0.05;
+      }
+      const r = M.frontierStageReward(profile, frontier.stage);
+      const last = frontier.stage >= M.FRONTIER.stages.length - 1;
+      let bonusHtml = '';
+      if (last) {
+        const b = M.claimReward(profile, M.FRONTIER.seasonKey, M.FRONTIER.clearBonus, { voidglass: 0 });
+        if (b.first) bonusHtml = `<br>SEASONAL JACKPOT: +⬡${b.voidglass} +▣${b.caches}`;
+      }
+      save();
+      $('endTitle').textContent = last ? 'Frontier Held' : `${M.FRONTIER.stages[frontier.stage].name} Held`;
+      $('endTitle').style.color = 'var(--gold)';
+      $('endRewards').innerHTML = `+⬡${r.voidglass} +¢${r.credits}${r.caches ? ` +▣${r.caches}` : ''}${bonusHtml}${last ? '' : '<br>The next line is forming.'}`;
+    } else {
+      $('endTitle').textContent = 'Line Broken';
+      $('endTitle').style.color = 'var(--hp-low)';
+      $('endRewards').innerHTML = 'Stages already held stay paid. The protocol rotates weekly — some weeks favor your squad.';
+    }
+    show('endModal');
+    return;
+  }
   if (rift) {
     if (bstate.winner === 'hero') {
       for (const u of bstate.units) {
@@ -774,6 +999,8 @@ function endBattle() {
       if (currentMode.type === 'titan') {
         const t = M.titanById(currentMode.id);
         r = M.claimReward(profile, 'titan:' + t.id, t.firstClear, t.repeat);
+        const gearKey = M.unlockTitanGear(profile, t.id);
+        if (gearKey) r.gearHtml = `<br>☠ TITAN-FORGED GEAR UNLOCKED: ${M.GEAR_SETS[gearKey].label.toUpperCase()}`;
         $('endTitle').textContent = r.first ? 'TITAN SLAIN' : 'Echo Dispersed';
       } else {
         r = M.claimReward(profile, 'vault:' + currentMode.id, M.VAULT_REWARD_FIRST, M.VAULT_REWARD_REPEAT);
@@ -781,7 +1008,7 @@ function endBattle() {
       }
       save();
       $('endTitle').style.color = 'var(--gold)';
-      $('endRewards').innerHTML = `${r.first ? 'FIRST CLEAR JACKPOT<br>' : ''}${r.voidglass ? `+⬡${r.voidglass} ` : ''}${r.credits ? ` +¢${r.credits}` : ''}${r.caches ? ` +▣${r.caches}` : ''}${r.shards ? ` +◆${r.shards}` : ''}`;
+      $('endRewards').innerHTML = `${r.first ? 'FIRST CLEAR JACKPOT<br>' : ''}${r.voidglass ? `+⬡${r.voidglass} ` : ''}${r.credits ? ` +¢${r.credits}` : ''}${r.caches ? ` +▣${r.caches}` : ''}${r.shards ? ` +◆${r.shards}` : ''}${r.gearHtml || ''}`;
     } else {
       $('endTitle').textContent = currentMode.type === 'titan' ? 'The Titan Prevails' : 'Vault Overrun';
       $('endTitle').style.color = 'var(--hp-low)';
@@ -811,6 +1038,15 @@ function endBattle() {
 
 function closeBattle() {
   hide('endModal');
+  if (frontier) {
+    const won = bstate && bstate.winner === 'hero';
+    const last = frontier.stage >= M.FRONTIER.stages.length - 1;
+    bstate = null; currentActor = null;
+    if (won && !last) { frontier.stage++; startFrontierBattle(); return; }
+    frontier = null;
+    switchScreen('frontier');
+    return;
+  }
   if (currentMode) {
     const tab = currentMode.returnTab;
     currentMode = null; bstate = null; currentActor = null;
@@ -842,7 +1078,7 @@ $('autoBtn').onclick = () => {
   } else render();
 };
 $('fastBtn').onclick = () => { fast = !fast; $('fastBtn').classList.toggle('on', fast); };
-$('fleeBtn').onclick = () => { bstate = null; rift = null; currentMode = null; currentEnc = null; currentActor = null; hide('endModal'); switchScreen('missions'); };
+$('fleeBtn').onclick = () => { bstate = null; rift = null; frontier = null; currentMode = null; currentEnc = null; currentActor = null; hide('endModal'); switchScreen('missions'); };
 
 // ------------------------------------------------------------ boot
 

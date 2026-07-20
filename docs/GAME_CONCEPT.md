@@ -134,7 +134,7 @@ The **Meridian** ship: assign off-squad units to modules (Reactor = currency, Bi
 
 ## 7. Art & Audio Direction
 
-- **Visual:** "Neon-void deco" — dark cosmic backgrounds, thin luminous linework, each star system with a distinct culture-derived palette. 2D character art with Live2D-style motion (dramatically cheaper than 3D and proven by Nikke/Arknights/Reverse:1999).
+- **Visual:** "Neon-void deco" — dark cosmic backgrounds, thin luminous linework, each star system with a distinct culture-derived palette. 2D character art with Live2D-style motion (dramatically cheaper than 3D and proven by Nikke/Arknights/Reverse:1999). Battle presentation borrows RAID's juice wholesale — floating damage numbers, crit pops, screen shake, turn-order ribbon, monumental boss staging — full plan and the $0 asset pipeline in `ART_DIRECTION.md`.
 - **UI:** ZZZ-inspired — diegetic ship OS, bold type, fast transitions.
 - **Audio:** synthwave base layer; each star system remixes the main theme in its own cultural instrumentation.
 

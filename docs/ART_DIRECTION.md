@@ -1,0 +1,58 @@
+# STARFALL: ECLIPSE PROTOCOL — Art Direction
+### Bringing RAID-quality visuals to the game for $0
+
+## 1. What "RAID-style visuals" actually are
+
+Deconstruct RAID: Shadow Legends' look and it's five separable ingredients — none of which requires their budget:
+
+1. **Painterly-realistic 3D characters** with heavy rim lighting and gritty material detail
+2. **A dark, high-contrast UI** — near-black panels, metallic borders, gold accents on everything that matters
+3. **Battle "juice"**: big floating damage numbers, crit pops, screen shake, hit flashes, skill cast flourishes
+4. **The turn-order ribbon** — the strip of portraits showing who acts next (the single most recognizable RAID UI element)
+5. **Monumental boss staging** — the boss physically dwarfs the squad on screen
+
+Items 2–5 are *presentation engineering*, not art assets. **They are now implemented in the prototype** (see §3). Item 1 is an asset pipeline problem with a real $0 path (§2).
+
+## 2. The character-art pipeline (free tools, RAID-adjacent look)
+
+RAID's characters are 3D renders. The free path to that look:
+
+**Route A — stylized 3D in Blender (closest to RAID):**
+- Model in **Blender** (free); sculpt-and-retopo or kitbash from CC0 model packs (Quaternius, Kenney, Poly Haven models).
+- Materials/lighting: Poly Haven CC0 HDRIs + heavy rim light (one cool key, one warm/affinity-colored rim) — this two-light setup IS most of the "RAID look."
+- Render to 2D: pose each character, render a 3/4 portrait + full-body at 2–4k, paint over in **Krita** for grit. You ship *renders*, not real-time 3D — massively cheaper, and how many "3D-looking" gachas actually work.
+- Idle motion later: cut the render into layers and rig in **Live2D Cubism (free indie tier)** or **DragonBones** (fully free) for breathing/hair drift.
+
+**Route B — painted 2D with the RAID lighting formula:** paint directly in Krita over a Blender blockout for perspective; same rim-light rule. Faster per character, needs stronger painting skill.
+
+**Rules regardless of route:**
+- **One silhouette test per character** — readable in the 26px emblem, the card, and the showcase art.
+- **Affinity = light color, House = trim/material language** (Vantar black-glass and gold, Frameguard heraldic plate, Chorus neon…). This makes every asset do lore work.
+- **No AI-generated character art as shipped identity** — the gacha audience detects and punishes it; concept exploration only.
+- Commission budget, when it exists someday, goes to the five Prime launch characters first — they carry the store page.
+
+## 3. Battle presentation (implemented in the prototype now)
+
+| RAID ingredient | Prototype implementation |
+|---|---|
+| Floating damage numbers | Engine emits a structured event stream (`state.events`); a fixed-position FX layer spawns rising numbers — white normal, small gray weak hits, big gold rotating **crit pops** |
+| Screen shake | Battlefield shakes on crits and 3000+ hits |
+| Hit flashes / cast flourishes | Radial flash over the struck card (gold for crits); pulse ring on big-skill casts; "REBORN" burst on titan resurrection |
+| Turn-order ribbon | Live forecast strip computed from turn meters — affinity-colored chips, next-to-act enlarged and glowing, hero/enemy edged green/red |
+| Monumental bosses | Titans render as full-width cards with oversized name, HP bar, phase counter, and rebirth warning |
+| Character identity | Procedural SVG **emblems** — affinity-gradient hex crest, House-colored ring, initials — used on battle cards, hangar, and pull reveals. These are the placeholder slots the Route-A renders drop into later, same shape language |
+| Arena staging | Battles get a bordered starfield arena panel with drifting nebula gradients |
+
+Design note: the FX layer is decoupled — the engine knows nothing about DOM; the UI consumes events. The same event stream drives Godot particles or Spine animations later without engine changes.
+
+## 4. UI skin evolution
+
+The current "neon-void deco" palette stays (it's our differentiation vs. RAID's brown-gold grimdark), but adopts RAID's *hierarchy rules*: gold is reserved for rewards, crits, and 5★/PRIME moments; red-pink for threat (titans, the Eclipsed); House colors never used for system chrome. When real character art lands, cards shift art-first: full-bleed portrait, UI as a thin overlay.
+
+## 5. Sequencing
+
+1. **Now (done):** juice + emblems + ribbon + boss staging — the game already *feels* RAID-like in motion.
+2. **Vertical-slice art pass:** 5 Prime portraits via Route A; drop into emblem/card slots.
+3. **Pull-animation upgrade:** rarity-colored signal-lock sequence ending on the portrait (the single highest-perceived-value asset in any gacha).
+4. **Battle backgrounds:** one painted arena per star system (Krita over Blender blockouts).
+5. **Live2D/DragonBones idle motion** for banner characters only — spotlight spend, not roster-wide.
