@@ -17,11 +17,13 @@ Items 2–5 are *presentation engineering*, not art assets. **They are now imple
 
 RAID's characters are 3D renders. The free path to that look:
 
-**Route A — stylized 3D in Blender (closest to RAID):**
+**Route A — stylized 3D in Blender (closest to RAID) — PIPELINE NOW LIVE:**
 - Model in **Blender** (free); sculpt-and-retopo or kitbash from CC0 model packs (Quaternius, Kenney, Poly Haven models).
 - Materials/lighting: Poly Haven CC0 HDRIs + heavy rim light (one cool key, one warm/affinity-colored rim) — this two-light setup IS most of the "RAID look."
 - Render to 2D: pose each character, render a 3/4 portrait + full-body at 2–4k, paint over in **Krita** for grit. You ship *renders*, not real-time 3D — massively cheaper, and how many "3D-looking" gachas actually work.
 - Idle motion later: cut the render into layers and rig in **Live2D Cubism (free indie tier)** or **DragonBones** (fully free) for breathing/hair drift.
+
+> **Working proof in the repo:** `prototype/models/sculpt.py` is a headless Blender (`pip install bpy`) script that builds real character meshes — an organic body via the **Skin modifier + Subdivision Surface** (smooth, merged limbs — the leap over assembled primitives) plus hard-surface armor/props and PBR materials (metallic + emission) — and exports glTF (`kaelis.glb`, `juno.glb`). The showcase loads these real Blender meshes (base64-embedded so it still runs from `file://` with no server) and renders them in the same hero rig. Run: `python3 prototype/models/sculpt.py`. This is the actual Route-A pipeline, end to end and reproducible — swap the skin-modifier base for a sculpted-and-retopo'd mesh and the same export/load path carries it to final quality.
 
 **Route B — painted 2D with the RAID lighting formula:** paint directly in Krita over a Blender blockout for perspective; same rim-light rule. Faster per character, needs stronger painting skill.
 
@@ -70,6 +72,8 @@ What this proves for production: the presentation *frame* (lighting rig, staging
 - **Juno-9** (Ion/The Chorus) — a completely different silhouette: slim idol build, white bodysuit with cyan seams, headset + mic boom, twin ponytails, a held microphone, orbiting broadcast rings pulsing to a beat, and a floating cassette. Stage retints **cyan**.
 
 Each carries its own **idle animation**, so the hero feels alive rather than posed: Kaelis breathes, shifts weight, his cloak and arms sway and his blade bobs; Juno bounces to a 2-count beat, her ponytails whip on a delay, her broadcast rings pulse and her mic lifts. The stage's rim light, aura, ground pool, embers, and rune circle all retint to the selected character's affinity — proving the frame generalizes across House identities, not just Kaelis. Adding character #3 is one `build()` function plus a registry entry.
+
+**Two render paths, one stage.** The showcase prefers the **real Blender-sculpted glTF model** (§2 Route-A) when it's decoded, and falls back to the procedural primitive build if not — so the same rig serves both the shipped-today stand-in and the sculpted upgrade. Both Kaelis and Juno now display their actual `.glb` meshes, auto-fit to the stage (scaled to height, feet on the dais, spun to face camera) with emissive accents boosted and orbiting shards + idle bob applied on top.
 
 ## 4. UI skin evolution
 

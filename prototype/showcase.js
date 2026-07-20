@@ -9,8 +9,72 @@ window.Showcase = (function () {
   let renderer, scene, camera, canvas, hero, running = false, t = 0, current = null;
   // Retintable stage pieces (recoloured per character affinity).
   let rimLight, auraSprite, poolSprite, embers, rune1, rune2, tickMats = [];
+  const glbCache = {}; // key -> normalized THREE.Object3D (sculpted Blender model)
 
   function supported() { return typeof THREE !== 'undefined'; }
+
+  // Decode a base64 GLB and parse it into a scene graph (no fetch → works file://).
+  function loadEmbeddedModels() {
+    if (typeof THREE.GLTFLoader === 'undefined' || !window.STARFALL_MODELS) return;
+    const loader = new THREE.GLTFLoader();
+    for (const key of Object.keys(window.STARFALL_MODELS)) {
+      try {
+        const bin = atob(window.STARFALL_MODELS[key]);
+        const buf = new ArrayBuffer(bin.length);
+        const view = new Uint8Array(buf);
+        for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i);
+        loader.parse(buf, '', (gltf) => {
+          glbCache[key] = gltf.scene; // cache raw; normalized per-instance
+          if (current === key && hero) select(key); // hot-swap once ready
+        }, () => {});
+      } catch (e) { /* fall back to procedural */ }
+    }
+  }
+
+  // Scale a model to target height, feet at y=0, centred, spun 180° to face the
+  // +Z camera, with emissive parts boosted. Mutates `root` in place.
+  function normalizeInPlace(root) {
+    root.updateMatrixWorld(true);
+    let box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
+    root.scale.setScalar(3.5 / (size.y || 1));
+    root.updateMatrixWorld(true);
+    box = new THREE.Box3().setFromObject(root);
+    const c = box.getCenter(new THREE.Vector3());
+    root.position.x -= c.x; root.position.z -= c.z; root.position.y -= box.min.y;
+    root.rotation.y = Math.PI; // Blender +Y front -> glTF -Z; face the camera
+    root.traverse((o) => {
+      if (o.isMesh && o.material) {
+        const mm = Array.isArray(o.material) ? o.material : [o.material];
+        for (const mt of mm) {
+          if (mt.emissive && (mt.emissive.r + mt.emissive.g + mt.emissive.b) > 0.05) mt.emissiveIntensity = 2.6;
+          mt.needsUpdate = true;
+        }
+      }
+    });
+  }
+
+  // Wrap a sculpted model as a hero group with orbiting accent shards + a gentle idle.
+  // The raw cached scene is cloned and normalized fresh each time (cloning a
+  // pre-transformed object dropped its scale).
+  function heroFromModel(key, accentHex) {
+    const model = glbCache[key].clone(true);
+    normalizeInPlace(model);
+    const g = new THREE.Group();
+    g.add(model);
+    g.userData.shards = [];
+    for (let i = 0; i < 6; i++) {
+      const shard = new THREE.Mesh(new THREE.TetrahedronGeometry(0.1 + (i % 3) * 0.03),
+        new THREE.MeshStandardMaterial({ color: accentHex, emissive: accentHex, emissiveIntensity: 1.6, roughness: 0.3 }));
+      g.add(shard);
+      g.userData.shards.push({ mesh: shard, phase: (i / 6) * Math.PI * 2, rad: 1.5 + (i % 3) * 0.25, y: 1.2 + i * 0.3, spd: 0.6 + (i % 3) * 0.2 });
+    }
+    g.userData.idle = (tt, grp) => {
+      grp.position.y = 0.05 + Math.sin(tt * 1.4) * 0.04;   // breathing bob
+      grp.children[0].rotation.z = Math.sin(tt * 0.6) * 0.02; // subtle weight sway (the model root)
+    };
+    return g;
+  }
 
   // One white radial-gradient texture, tinted per-use via sprite material colour.
   let _glowTex = null;
@@ -271,8 +335,10 @@ window.Showcase = (function () {
 
   function select(key) {
     const c = CHARACTERS[key]; if (!c || !renderer) return null;
-    if (hero) { scene.remove(hero); hero.traverse((o) => { o.geometry && o.geometry.dispose && o.geometry.dispose(); }); }
-    hero = c.build(); scene.add(hero); current = key;
+    if (hero) { scene.remove(hero); }
+    // Prefer the sculpted Blender model once it's decoded; procedural is the fallback.
+    hero = glbCache[key] ? heroFromModel(key, c.accent) : c.build();
+    scene.add(hero); current = key;
     // retint the stage to the character's affinity
     rimLight.color.setHex(c.rimHex);
     auraSprite.material.color.setHex(c.auraHex);
@@ -324,6 +390,7 @@ window.Showcase = (function () {
     sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
     scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0x8899cc, size: 0.15 })));
 
+    loadEmbeddedModels();
     select('kaelis');
     return true;
   }
